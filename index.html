@@ -878,6 +878,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderStats();
   renderAllSettingsEditors();
   if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible') document.getElementById('f-date').value=localDateStr();
+  });
 });
 
 function initHeader(){
