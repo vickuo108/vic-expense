@@ -2091,16 +2091,14 @@ function formatDateLabel(s){
   if(s===today) return '今天'; if(s===yesterday) return '昨天';
   return d.toLocaleDateString('zh-TW',{month:'numeric',day:'numeric',weekday:'short'});
 }
-function statScrollTo(id){
+function scrollToSection(id){
   const el=document.getElementById(id); if(!el) return;
   const content=document.getElementById('main-content');
-  content.scrollTo({top:el.offsetTop-8,behavior:'smooth'});
+  const top=content.scrollTop+el.getBoundingClientRect().top-content.getBoundingClientRect().top-8;
+  content.scrollTo({top,behavior:'smooth'});
 }
-function setScrollTo(id){
-  const el=document.getElementById(id); if(!el) return;
-  const content=document.getElementById('main-content');
-  content.scrollTo({top:el.offsetTop-8,behavior:'smooth'});
-}
+function statScrollTo(id){ scrollToSection(id); }
+function setScrollTo(id){ scrollToSection(id); }
 function esc(s){ return s.replace(/'/g,"\\'"); }
 let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
