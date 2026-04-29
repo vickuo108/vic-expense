@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#3B5BDB">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -18,7 +18,7 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 .header-title{font-size:18px;font-weight:700;letter-spacing:.5px}
 .header-sub{font-size:12px;opacity:.8;margin-top:1px}
 .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 12px 80px}
-.bottom-nav{position:absolute;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #E8EAED;display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
+.bottom-nav{position:absolute;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #E8EAED;display:flex;z-index:100;padding-bottom:max(env(safe-area-inset-bottom),8px)}
 .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 4px 6px;cursor:pointer;color:#9BA3AF;border:none;background:none;transition:color .2s}
 .nav-btn.active{color:#3B5BDB}
 .nav-btn .nav-icon{font-size:22px;line-height:1}
@@ -198,8 +198,8 @@ html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFo
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 @supports(padding-bottom:env(safe-area-inset-bottom)){
-  .content{padding-bottom:calc(80px + env(safe-area-inset-bottom))}
-  .bottom-nav{padding-bottom:env(safe-area-inset-bottom)}
+  .content{padding-bottom:calc(80px + max(env(safe-area-inset-bottom),8px))}
+  .bottom-nav{padding-bottom:max(env(safe-area-inset-bottom),8px)}
 }
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
