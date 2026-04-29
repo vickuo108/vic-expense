@@ -976,6 +976,7 @@ function switchTab(name, btn){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('panel-'+name).classList.add('active');
   btn.classList.add('active');
+  if(name==='add') document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
   if(name==='records'){ populateFilterDropdowns(); renderRecords(); }
   if(name==='stats') renderStats();
   if(name==='report') renderFinReport();
