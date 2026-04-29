@@ -868,7 +868,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   populateAddForm();
   populateEditForm();
   populateFilterDropdowns();
-  document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('f-date').value=localDateStr();
   initFormListeners();
   initEditListeners();
   initSearchListeners();
@@ -900,7 +900,7 @@ function loadAppTitle(){
 
 function updateHeaderSub(){
   const data=loadRecords();
-  const pfx=new Date().toISOString().slice(0,7);
+  const pfx=localDateStr().slice(0,7);
   const exp=data.filter(r=>r.date.startsWith(pfx)&&r.amount<0).reduce((s,r)=>s+r.amount,0);
   const inc=data.filter(r=>r.date.startsWith(pfx)&&r.amount>0&&r.type==='收入').reduce((s,r)=>s+r.amount,0);
   document.getElementById('header-sub').textContent=`本月支出 ${fmt(Math.abs(exp))} · 收入 ${fmt(inc)} · 共 ${data.length} 筆`;
@@ -976,7 +976,7 @@ function switchTab(name, btn){
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('panel-'+name).classList.add('active');
   btn.classList.add('active');
-  if(name==='add') document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
+  if(name==='add') document.getElementById('f-date').value=localDateStr();
   if(name==='records'){ populateFilterDropdowns(); renderRecords(); }
   if(name==='stats') renderStats();
   if(name==='report') renderFinReport();
@@ -1073,7 +1073,7 @@ function submitAdd(){
 }
 
 function resetAddForm(){
-  document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('f-date').value=localDateStr();
   document.getElementById('f-amount').value='';
   document.getElementById('f-note').value='';
   document.getElementById('f-main').value='';
@@ -2070,6 +2070,7 @@ function confirmClear(){
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
+function localDateStr(d=new Date()){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function fmt(n){ if(n==null||isNaN(n)) return '0'; return Math.round(n).toLocaleString('zh-TW'); }
 function parseAmt(v){ const n=parseFloat(String(v).replace(/,/g,'')); return isNaN(n)?0:n; }
 function fmtInput(v){
@@ -2087,8 +2088,8 @@ function attachAmtFormat(id){
 }
 function formatDateLabel(s){
   const d=new Date(s+'T00:00:00');
-  const today=new Date().toISOString().slice(0,10);
-  const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
+  const today=localDateStr();
+  const yesterday=localDateStr(new Date(Date.now()-86400000));
   if(s===today) return '今天'; if(s===yesterday) return '昨天';
   return d.toLocaleDateString('zh-TW',{month:'numeric',day:'numeric',weekday:'short'});
 }
