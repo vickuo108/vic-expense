@@ -209,6 +209,8 @@ input[type=number]{-moz-appearance:textfield}
 .stats-row3 .stat-box-val{font-size:14px;font-weight:800}
 .fin-plan-total{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#EFF6FF;border-bottom:2px solid #BFDBFE;font-weight:700;color:#1D4ED8;font-size:14px}
 #rep-month-selector::-webkit-scrollbar{display:none}
+.back-top-btn{background:none;border:1.5px solid #E5E7EB;border-radius:6px;padding:2px 8px;font-size:11px;color:#9BA3AF;cursor:pointer;flex-shrink:0;line-height:1.4}
+.back-top-btn:active{background:#F3F4F6}
 .stats-quicknav{display:flex;gap:6px;overflow-x:auto;padding:0 0 10px;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
 .stats-quicknav::-webkit-scrollbar{display:none}
 .stats-qnav-btn{flex-shrink:0;padding:5px 11px;border-radius:20px;border:1.5px solid #E5E7EB;background:#fff;font-size:12px;cursor:pointer;white-space:nowrap;color:#374151;font-weight:500}
@@ -877,6 +879,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderRecords();
   renderStats();
   renderAllSettingsEditors();
+  initBackToTopBtns();
   if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='visible') document.getElementById('f-date').value=localDateStr();
@@ -1021,6 +1024,12 @@ function initFormListeners(){
     });
   });
 
+  document.getElementById('f-type').addEventListener('change',()=>{
+    const t=document.getElementById('f-type').value;
+    const el=document.getElementById('f-amount');
+    if((t==='費用'||t==='成本')&&el.value==='') el.value='-';
+    if(t!=='費用'&&t!=='成本'&&el.value==='-') el.value='';
+  });
   document.getElementById('btn-add-submit').addEventListener('click', submitAdd);
   attachAmtFormat('f-amount');
   attachAmtFormat('f-loan-p');
@@ -2095,6 +2104,19 @@ function formatDateLabel(s){
   const yesterday=localDateStr(new Date(Date.now()-86400000));
   if(s===today) return '今天'; if(s===yesterday) return '昨天';
   return d.toLocaleDateString('zh-TW',{month:'numeric',day:'numeric',weekday:'short'});
+}
+function initBackToTopBtns(){
+  const goTop=()=>document.getElementById('main-content').scrollTo({top:0,behavior:'smooth'});
+  const addBtn=el=>{
+    if(!el||el.querySelector('.back-top-btn')) return;
+    const btn=document.createElement('button');
+    btn.className='back-top-btn'; btn.textContent='↑ 頂部'; btn.onclick=goTop;
+    el.style.display='flex'; el.style.justifyContent='space-between'; el.style.alignItems='center';
+    el.appendChild(btn);
+  };
+  document.querySelectorAll('#panel-stats .chart-title').forEach(addBtn);
+  addBtn(document.querySelector('#panel-stats .gf-title'));
+  document.querySelectorAll('#panel-settings .settings-section-title').forEach(addBtn);
 }
 function scrollToSection(id){
   const el=document.getElementById(id); if(!el) return;
