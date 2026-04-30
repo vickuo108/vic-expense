@@ -700,13 +700,6 @@ input[type=number]{-moz-appearance:textfield}
 </div>
 
 <div class="toast" id="toast"></div>
-<div id="update-banner" style="display:none;position:fixed;bottom:calc(58px + max(env(safe-area-inset-bottom),8px));left:0;right:0;max-width:480px;margin:0 auto;background:#1F2937;color:#fff;padding:11px 16px;z-index:200;display:none;align-items:center;justify-content:space-between;gap:10px;border-radius:12px 12px 0 0">
-  <span style="font-size:13px">🆕 有新版本，點擊立即更新</span>
-  <div style="display:flex;gap:8px;flex-shrink:0">
-    <button onclick="applyUpdate()" style="background:#3B5BDB;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;font-weight:600">更新</button>
-    <button onclick="document.getElementById('update-banner').style.display='none'" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer">✕</button>
-  </div>
-</div>
 <input type="file" id="json-file-input" accept=".json" style="display:none" onchange="handleJSONImport(event)">
 
 <script>
@@ -889,14 +882,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderAllSettingsEditors();
   initBackToTopBtns();
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('sw.js').then(reg=>{
-      const showBanner=()=>{ document.getElementById('update-banner').style.display='flex'; };
-      if(reg.waiting) showBanner();
-      reg.addEventListener('updatefound',()=>{
-        const nw=reg.installing;
-        nw.addEventListener('statechange',()=>{ if(nw.state==='installed'&&navigator.serviceWorker.controller) showBanner(); });
-      });
-    }).catch(()=>{});
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
     navigator.serviceWorker.addEventListener('controllerchange',()=>window.location.reload());
   }
   document.addEventListener('visibilitychange',()=>{
@@ -2102,11 +2088,6 @@ function confirmClear(){
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
-function applyUpdate(){
-  navigator.serviceWorker.getRegistration().then(reg=>{
-    if(reg&&reg.waiting) reg.waiting.postMessage('SKIP_WAITING');
-  });
-}
 function localDateStr(d=new Date()){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function fmt(n){ if(n==null||isNaN(n)) return '0'; return Math.round(n).toLocaleString('zh-TW'); }
 function parseAmt(v){ const n=parseFloat(String(v).replace(/,/g,'')); return isNaN(n)?0:n; }
