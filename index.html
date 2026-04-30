@@ -872,6 +872,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   populateFilterDropdowns();
   document.getElementById('f-date').value=localDateStr();
   initFormListeners();
+  autoFillAmtSign();
   initEditListeners();
   initSearchListeners();
   initStatNav();
@@ -1024,17 +1025,18 @@ function initFormListeners(){
     });
   });
 
-  document.getElementById('f-type').addEventListener('change',()=>{
-    const t=document.getElementById('f-type').value;
-    const el=document.getElementById('f-amount');
-    if((t==='費用'||t==='成本')&&el.value==='') el.value='-';
-    if(t!=='費用'&&t!=='成本'&&el.value==='-') el.value='';
-  });
+  document.getElementById('f-type').addEventListener('change', autoFillAmtSign);
   document.getElementById('btn-add-submit').addEventListener('click', submitAdd);
   attachAmtFormat('f-amount');
   attachAmtFormat('f-loan-p');
 }
 
+function autoFillAmtSign(){
+  const t=document.getElementById('f-type').value;
+  const el=document.getElementById('f-amount');
+  if((t==='費用'||t==='成本')&&el.value==='') el.value='-';
+  if(t!=='費用'&&t!=='成本'&&el.value==='-') el.value='';
+}
 function calcLoanInterest(prefix){
   const amt=parseAmt(document.getElementById(`${prefix}-amount`).value);
   const p=parseAmt(document.getElementById(`${prefix}-loan-p`).value)||0;
@@ -1087,6 +1089,7 @@ function submitAdd(){
 function resetAddForm(){
   document.getElementById('f-date').value=localDateStr();
   document.getElementById('f-amount').value='';
+  autoFillAmtSign();
   document.getElementById('f-note').value='';
   document.getElementById('f-main').value='';
   fillSelect(document.getElementById('f-sub'),[],'（選填）');
