@@ -554,6 +554,11 @@ input[type=number]{-moz-appearance:textfield}
         <div class="s-text"><div class="s-title">清除所有記帳資料</div><div class="s-desc">不可復原，請先備份</div></div>
         <span class="s-arrow" style="color:#EF4444">›</span>
       </button>
+      <button class="settings-btn" onclick="checkForUpdate()">
+        <div class="s-icon" style="background:#F0F9FF">🔄</div>
+        <div class="s-text"><div class="s-title">檢查更新</div><div class="s-desc">手動觸發 App 更新，更新後自動重新載入</div></div>
+        <span class="s-arrow">›</span>
+      </button>
 
       <div style="text-align:center;font-size:11px;color:#D1D5DB;margin-top:20px;padding-bottom:8px">Vic 記帳本 v2.0 · 2026</div>
     </div>
@@ -2089,6 +2094,20 @@ function confirmClear(){
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
+function checkForUpdate(){
+  if(!('serviceWorker' in navigator)){ showToast('此瀏覽器不支援 SW'); return; }
+  navigator.serviceWorker.getRegistration().then(reg=>{
+    if(!reg){ showToast('尚未安裝 Service Worker'); return; }
+    showToast('正在檢查更新…');
+    reg.update().then(()=>{
+      if(reg.waiting){
+        reg.waiting.postMessage('SKIP_WAITING');
+      } else {
+        showToast('已是最新版本 ✓');
+      }
+    }).catch(()=>showToast('檢查失敗，請確認網路連線'));
+  });
+}
 function localDateStr(d=new Date()){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function fmt(n){ if(n==null||isNaN(n)) return '0'; return Math.round(n).toLocaleString('zh-TW'); }
 function parseAmt(v){ const n=parseFloat(String(v).replace(/,/g,'')); return isNaN(n)?0:n; }
