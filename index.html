@@ -509,6 +509,7 @@ input[type=number]{-moz-appearance:textfield}
       <div class="list-editor" id="editor-ewallet"></div>
 
       <div id="ss-cash" class="settings-section-title">💵 現金 / 其他</div>
+      <div style="font-size:12px;color:#9BA3AF;padding:0 4px 8px">設定期初現金金額，統計頁「可用現金」會自動加入此金額。</div>
       <div class="list-editor" id="editor-cash"></div>
 
       <div id="ss-income" class="settings-section-title">💰 收入類別</div>
@@ -1754,7 +1755,7 @@ function renderAllSettingsEditors(){
   renderCCEditor('editor-cc', mg['信用卡']||[]);
   renderBankEditor('editor-bank', mg['銀行存款']||[], '銀行存款');
   renderBankEditor('editor-ewallet', mg['電子錢包']||[], '電子錢包');
-  renderSimpleListEditor('editor-cash',   mg['現金']||[],     '現金',     v=>{ const mg=loadMG(); mg['現金']=v; saveMG(mg); });
+  renderBalanceListEditor('editor-cash', mg['現金']||[], '現金', '期初');
   renderFloatCatsEditor();
   renderBudgetEditor();
   renderFixedEditor();
