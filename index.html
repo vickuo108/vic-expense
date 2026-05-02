@@ -788,10 +788,10 @@ input[type=number]{-moz-appearance:textfield}
 const DEFAULT_TYPES = ['費用','收入','內部轉帳','清償負債','成本','投資'];
 
 const DEFAULT_METHODS_GROUPED = {
-  '信用卡':['CUBE 卡','Unicard 卡','Uniopen 卡','Open Possible','Richart 卡','iLEO 卡','Sport 卡','momo卡','富邦Ｊ卡','星展 eco 卡','蝦皮聯名卡','DAWHO 卡','中信 LinePay 卡'],
-  '銀行帳戶':['台新銀行','大戶','將來銀行','Richart 主帳戶','Richart 子帳戶','第一銀行','國泰世華(台幣)','國泰世華(外幣)','韓元帳戶','玉山銀行','中國信託','鉅亨','Line Bank','Firstrade'],
-  '電子錢包':['LinePay Money','悠遊錢包','摩斯卡','CUBE 悠遊卡','Selfroom','iPass Money'],
   '現金':['現金'],
+  '銀行帳戶':['台新銀行','大戶','將來銀行','Richart 主帳戶','Richart 子帳戶','第一銀行','國泰世華(台幣)','國泰世華(外幣)','韓元帳戶','玉山銀行','中國信託','鉅亨','Line Bank','Firstrade'],
+  '信用卡':['CUBE 卡','Unicard 卡','Uniopen 卡','Open Possible','Richart 卡','iLEO 卡','Sport 卡','momo卡','富邦Ｊ卡','星展 eco 卡','蝦皮聯名卡','DAWHO 卡','中信 LinePay 卡'],
+  '電子錢包':['LinePay Money','悠遊錢包','摩斯卡','CUBE 悠遊卡','Selfroom','iPass Money'],
 };
 
 const DEFAULT_FLOAT_CATS = {
@@ -973,6 +973,21 @@ function migrateData(){
   if(!localStorage.getItem('vic2_migrated_cats_v1')){
     localStorage.removeItem('vic2_categories');
     localStorage.setItem('vic2_migrated_cats_v1','1');
+  }
+  // 重排付款方式分組順序：現金 > 銀行帳戶 > 信用卡 > 電子錢包（僅執行一次）
+  if(!localStorage.getItem('vic2_migrated_mg_order')){
+    const rawMG=localStorage.getItem('vic2_methods_grouped');
+    if(rawMG){
+      try{
+        const mg=JSON.parse(rawMG);
+        const order=['現金','銀行帳戶','信用卡','電子錢包'];
+        const reordered={};
+        order.forEach(k=>{ if(mg[k]) reordered[k]=mg[k]; });
+        Object.keys(mg).forEach(k=>{ if(!reordered[k]) reordered[k]=mg[k]; });
+        localStorage.setItem('vic2_methods_grouped',JSON.stringify(reordered));
+      }catch(e){}
+    }
+    localStorage.setItem('vic2_migrated_mg_order','1');
   }
 }
 
@@ -1162,7 +1177,8 @@ function initFormListeners(){
   });
 
   lpEl.addEventListener('input',calcLoanInterest.bind(null,'f'));
-  amtEl.addEventListener('input',()=>{ calcLoanInterest('f'); updateSharePreview(); });
+  amtEl.addEventListener('input',()=>{ calcLoanInterest('f'); });
+  amtEl.addEventListener('blur',()=>{ updateSharePreview(); });
 
   document.querySelectorAll('#panel-add .split-opt').forEach(btn=>{
     btn.addEventListener('click',()=>{
@@ -2417,8 +2433,12 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='1.1';
+const APP_VERSION='1.2';
 const CHANGELOG=[
+  {version:'1.2',date:'2026-05-03',items:[
+    '付款方式順序調整為：現金、銀行帳戶、信用卡、電子錢包',
+    '輸入金額時數字鍵盤不再自動收起（iOS 修正）',
+  ]},
   {version:'1.1',date:'2026-05-02',items:[
     '付款方式分組「銀行存款」更名為「銀行帳戶」，舊資料自動遷移',
     '選銀行帳戶付款時，主類別新增提款、轉帳、現金存入、手續費、奉獻',
