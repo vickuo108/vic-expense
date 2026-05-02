@@ -59,8 +59,11 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .filter-row:last-child{margin-bottom:0}
 .filter-select{width:100%;padding:9px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;background:#fff;appearance:none;-webkit-appearance:none}
 .date-group-label{font-size:11px;color:#9BA3AF;font-weight:600;padding:10px 4px 4px;letter-spacing:.5px}
-.tx-item{display:flex;align-items:center;padding:11px 0;cursor:pointer;border-bottom:1px solid #F3F4F6}
-.tx-item:last-child{border-bottom:none}
+.tx-swipe-wrap{position:relative;overflow:hidden}
+.tx-swipe-wrap:last-child .tx-item{border-bottom:none}
+.tx-del-btn{position:absolute;right:0;top:0;bottom:0;width:72px;background:#EF4444;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;-webkit-user-select:none}
+.tx-item{display:flex;align-items:center;padding:11px 0;cursor:pointer;border-bottom:1px solid #F3F4F6;transition:transform .25s cubic-bezier(.25,1,.5,1);background:#fff;position:relative;z-index:1}
+.tx-item.sw-moving{transition:none}
 .tx-icon-wrap{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
 .tx-body{flex:1;min-width:0;margin:0 10px}
 .tx-main{font-size:14px;font-weight:700;color:#1A1A2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -147,6 +150,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .list-item-name{flex:1;font-size:14px}
 .list-item-del{background:none;border:none;color:#EF4444;font-size:18px;cursor:pointer;padding:2px;flex-shrink:0}
 .list-item-expand{background:none;border:none;color:#9BA3AF;font-size:15px;cursor:pointer;padding:2px;flex-shrink:0}
+.ds-dragging{background:#EEF2FF!important;box-shadow:0 4px 14px rgba(59,91,219,0.2);border-radius:8px;opacity:0.96;position:relative;z-index:10;transform:scale(1.01)}
 .list-add-row{display:flex;gap:8px;padding:10px 14px;border-top:1px solid #F3F4F6;background:#FAFAFA}
 .list-add-input{flex:1;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:14px;background:#fff}
 .list-add-input:focus{outline:none;border-color:#3B5BDB}
@@ -552,40 +556,40 @@ input[type=number]{-moz-appearance:textfield}
       </div>
 
       <div id="ss-bank" class="settings-section-title">🏦 銀行帳戶</div>
-      <div class="list-editor" id="editor-bank"></div>
+      <div class="list-editor" id="editor-bank" data-dgrp="銀行帳戶"></div>
 
       <div id="ss-cc" class="settings-section-title">💳 信用卡</div>
-      <div class="list-editor" id="editor-cc"></div>
+      <div class="list-editor" id="editor-cc" data-dgrp="信用卡"></div>
 
       <div id="ss-ewallet" class="settings-section-title">👛 電子錢包</div>
-      <div class="list-editor" id="editor-ewallet"></div>
+      <div class="list-editor" id="editor-ewallet" data-dgrp="電子錢包"></div>
 
       <div id="ss-cash" class="settings-section-title">💵 現金 / 其他</div>
       <div style="font-size:12px;color:#9BA3AF;padding:0 4px 8px">設定期初現金金額，統計頁「可用現金」會自動加入此金額。</div>
-      <div class="list-editor" id="editor-cash"></div>
+      <div class="list-editor" id="editor-cash" data-dgrp="現金"></div>
 
       <div id="ss-income" class="settings-section-title">💰 收入類別</div>
-      <div class="list-editor" id="editor-income"></div>
+      <div class="list-editor" id="editor-income" data-dsave="income"></div>
 
       <div id="ss-finplan" class="settings-section-title">📈 財務規劃</div>
       <div style="font-size:12px;color:#9BA3AF;padding:0 4px 8px">各規劃帳戶初始金額，統計頁自動累計進出。</div>
-      <div class="list-editor" id="editor-fin-plan"></div>
+      <div class="list-editor" id="editor-fin-plan" data-dsave="finplan"></div>
 
       <div id="ss-float" class="settings-section-title">🛒 浮動支出類別</div>
-      <div class="list-editor" id="editor-float-cats"></div>
+      <div class="list-editor" id="editor-float-cats" data-dsave="floatmain"></div>
 
 
       <div id="ss-fixed" class="settings-section-title">🔒 固定支出</div>
       <div style="font-size:12px;color:#9BA3AF;padding:0 4px 8px">設定每月固定金額，新增記帳時自動帶入。</div>
-      <div class="list-editor" id="editor-fixed"></div>
+      <div class="list-editor" id="editor-fixed" data-dsave="fixed"></div>
 
       <div id="ss-loan" class="settings-section-title">🏦 貸款</div>
       <div style="font-size:12px;color:#9BA3AF;padding:0 4px 8px">設定貸款名稱與期初本金，剩餘本金依還款記錄自動計算。</div>
-      <div class="list-editor" id="editor-loans"></div>
+      <div class="list-editor" id="editor-loans" data-dsave="loans"></div>
 
       <div id="ss-cclimit" class="settings-section-title">💳 信用卡額度</div>
       <div style="font-size:12px;color:#9BA3AF;padding:0 4px 8px">各銀行信用卡額度，用於計算使用率。</div>
-      <div class="list-editor" id="editor-cc-limits"></div>
+      <div class="list-editor" id="editor-cc-limits" data-dsave="cclimits"></div>
 
       <div id="ss-backup" class="settings-section-title">🛠️ 維護與工具</div>
       <button class="settings-btn" onclick="exportJSON()">
@@ -1005,6 +1009,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   initSearchListeners();
   initStatNav();
   initReportNav();
+  initDragSort();
+  initSwipeDelete();
   renderRecords();
   renderStats();
   renderAllSettingsEditors();
@@ -1334,17 +1340,70 @@ function txItemHTML(r){
     :r.split===1?'<span class="badge badge-half">各半</span>'
     :r.split==='repay'?'<span class="badge badge-repay">GF還款</span>':'';
   const mainLine=[r.method&&r.method!=='無'?r.method:null,r.main||r.type,r.sub].filter(Boolean).join(' · ');
-  return `<div class="tx-item" onclick="openEdit('${r.id}')">
-    <div class="tx-icon-wrap ${bg}">${ic}</div>
-    <div class="tx-body">
-      <div class="tx-main">${mainLine} ${badge}</div>
-      ${r.note?`<div class="tx-note">${r.note}</div>`:''}
-    </div>
-    <div class="tx-right">
-      <div class="tx-amount-val ${amtCls}">${amtStr}</div>
-      ${vicStr?`<div class="tx-vic-share">${vicStr}</div>`:''}
+  return `<div class="tx-swipe-wrap">
+    <div class="tx-del-btn" onclick="swipeDelete('${r.id}')">刪除</div>
+    <div class="tx-item" data-rid="${r.id}">
+      <div class="tx-icon-wrap ${bg}">${ic}</div>
+      <div class="tx-body">
+        <div class="tx-main">${mainLine} ${badge}</div>
+        ${r.note?`<div class="tx-note">${r.note}</div>`:''}
+      </div>
+      <div class="tx-right">
+        <div class="tx-amount-val ${amtCls}">${amtStr}</div>
+        ${vicStr?`<div class="tx-vic-share">${vicStr}</div>`:''}
+      </div>
     </div>
   </div>`;
+}
+
+// ─── Swipe-to-delete ──────────────────────────────────────────────────────
+let _sw=null, _swOpen=null;
+function initSwipeDelete(){
+  const list=document.getElementById('records-list');
+  list.addEventListener('touchstart',_swStart,{passive:true});
+  list.addEventListener('touchmove',_swMove,{passive:false});
+  list.addEventListener('touchend',_swEnd,{passive:true});
+  list.addEventListener('touchcancel',_swEnd,{passive:true});
+  list.addEventListener('click',_swClick,true);
+}
+function _swStart(e){
+  const item=e.target.closest('.tx-item');
+  if(_swOpen&&_swOpen!==item){ _swReset(_swOpen); _swOpen=null; }
+  if(!item) return;
+  _sw={item, x0:e.touches[0].clientX, y0:e.touches[0].clientY, dx:0, dir:null, wasOpen:_swOpen===item};
+}
+function _swMove(e){
+  if(!_sw) return;
+  const dx=e.touches[0].clientX-_sw.x0, dy=e.touches[0].clientY-_sw.y0;
+  if(!_sw.dir){ if(Math.abs(dx)<5&&Math.abs(dy)<5) return; _sw.dir=Math.abs(dx)>=Math.abs(dy)?'h':'v'; }
+  if(_sw.dir==='v') return;
+  e.preventDefault();
+  const x=Math.min(0,Math.max(-72,(_sw.wasOpen?-72:0)+dx));
+  _sw.dx=x; _sw.item.style.transform=`translateX(${x}px)`; _sw.item.classList.add('sw-moving');
+}
+function _swEnd(){
+  if(!_sw) return;
+  const{item,dx,dir}=_sw; item.classList.remove('sw-moving');
+  if(dir==='h'){
+    if(dx<-40){ item.style.transform='translateX(-72px)'; item._swOpen=true; _swOpen=item; }
+    else{ _swReset(item); _swOpen=null; }
+  }
+  _sw=null;
+}
+function _swReset(item){ item.style.transform=''; item._swOpen=false; }
+function _swClick(e){
+  const item=e.target.closest('.tx-item');
+  if(!item) return;
+  if(item._swOpen){ e.stopPropagation(); _swReset(item); _swOpen=null; return; }
+  if(_swOpen&&_swOpen!==item){ e.stopPropagation(); _swReset(_swOpen); _swOpen=null; return; }
+  // Normal tap → open edit
+  const rid=item.dataset.rid; if(rid) openEdit(rid);
+  e.stopPropagation();
+}
+function swipeDelete(id){
+  _swOpen=null;
+  saveRecords(loadRecords().filter(x=>x.id!==id));
+  renderRecords(); updateHeaderSub(); renderStats(); showToast('🗑 已刪除');
 }
 
 // ─── Edit Modal ────────────────────────────────────────────────────────────
@@ -1896,9 +1955,10 @@ function renderFinPlanSection(data, prefix){
   sec.style.display='block';
   let tFlow=0, tBal=0;
   const nc=n=>n===0?'-':n>0?fmt(n):`<span class="clr-expense">-${fmt(Math.abs(n))}</span>`;
+  const planFlow=r=>(r.method&&r.method!=='無')?-r.amount:r.amount;
   const rows=plans.map(p=>{
-    const moFlow=-(data.filter(r=>r.date.startsWith(prefix)&&r.main===p.name).reduce((s,r)=>s+r.amount,0));
-    const allFlow=-(data.filter(r=>r.main===p.name).reduce((s,r)=>s+r.amount,0));
+    const moFlow=data.filter(r=>r.date.startsWith(prefix)&&r.main===p.name).reduce((s,r)=>s+planFlow(r),0);
+    const allFlow=data.filter(r=>r.main===p.name).reduce((s,r)=>s+planFlow(r),0);
     const bal=(p.amount||0)+allFlow;
     tFlow+=moFlow; tBal+=bal;
     return `<tr><td>${p.name}</td><td>${moFlow?nc(moFlow):'-'}</td><td>${bal?fmt(bal):'-'}</td></tr>`;
@@ -1936,11 +1996,10 @@ function renderFixedSection(data, prefix){
   let total=0;
   const rows=fixed.map(item=>{
     const rec=data.filter(r=>r.date.startsWith(prefix)&&r.main==='固定支出'&&r.sub===item.name);
-    const amt=rec.length?rec.reduce((s,r)=>s+r.amount,0):-(item.amount||0);
+    const amt=rec.reduce((s,r)=>s+r.amount,0);
     const lastRec=rec.slice().sort((a,b)=>b.date.localeCompare(a.date))[0];
-    const dayDisp=lastRec
-      ?lastRec.date.slice(5).replace('-','/')
-      :(item.day?`${prefix.slice(5)}/${String(item.day).padStart(2,'0')}`:'');
+    const dayDisp=lastRec?lastRec.date.slice(5).replace('-','/'):'';
+
     const histRec=data.filter(r=>r.main==='固定支出'&&r.sub===item.name).sort((a,b)=>b.date.localeCompare(a.date))[0];
     const method=histRec?.method||'';
     if(amt) total+=amt;
@@ -2049,7 +2108,7 @@ function renderCCEditor(containerId, list){
   const el=document.getElementById(containerId);
   const bal=loadAcctBal();
   const rows=list.map(item=>`
-    <div class="list-item-row">
+    <div class="list-item-row" data-dkey="${item}">
       <span class="list-item-name">${item}</span>
       <span class="inline-num-label">期初 $</span>
       <input type="number" class="inline-num" value="${bal[item]||''}" placeholder="0"
@@ -2071,7 +2130,7 @@ function renderBankEditor(containerId, list, groupKey){
   const rows=list.map(item=>{
     const isAvail=avail[item]||false;
     const btnStyle=isAvail?'background:#DCFCE7;border-color:#16A34A;color:#15803D':'background:#F3F4F6;border-color:#D1D5DB;color:#9BA3AF';
-    return `<div class="list-item-row">
+    return `<div class="list-item-row" data-dkey="${item}">
       <span class="list-item-name">${item}</span>
       <span class="inline-num-label">期初 $</span>
       <input type="number" class="inline-num" value="${bal[item]||''}" placeholder="0"
@@ -2094,7 +2153,7 @@ function renderCCLimitsEditor(){
   const total=limits.reduce((s,l)=>s+(l.amount||0),0);
   const header=`<div class="fin-plan-total"><span>信用卡總額度</span><span>$${fmt(total)}</span></div>`;
   const rows=limits.map(l=>`
-    <div class="list-item-row">
+    <div class="list-item-row" data-dkey="${l.id}">
       <span class="list-item-name">${l.name}</span>
       <span class="inline-num-label">$</span>
       <input type="number" class="inline-num" value="${l.amount||''}" placeholder="0" min="0" step="1"
@@ -2125,7 +2184,7 @@ function renderBalanceListEditor(containerId, list, groupKey, amtLabel){
   const el=document.getElementById(containerId);
   const bal=loadAcctBal();
   const rows=list.map(item=>`
-    <div class="list-item-row">
+    <div class="list-item-row" data-dkey="${item}">
       <span class="list-item-name">${item}</span>
       <span class="inline-num-label">${amtLabel} $</span>
       <input type="number" class="inline-num" value="${bal[item]||''}" placeholder="0" min="0" step="1"
@@ -2173,7 +2232,7 @@ function renderFinPlanEditor(){
   const total=plans.reduce((s,p)=>s+(p.amount||0),0);
   const header=`<div class="fin-plan-total"><span>帳戶總額</span><span>$${fmt(total)}</span></div>`;
   const rows=plans.map(p=>`
-    <div class="list-item-row">
+    <div class="list-item-row" data-dkey="${p.id}">
       <span class="list-item-name">${p.name}</span>
       <span class="inline-num-label">$</span>
       <input type="number" class="inline-num" value="${p.amount||''}" placeholder="0" min="0" step="1"
@@ -2203,7 +2262,7 @@ function delFinPlan(id){
 function renderSimpleListEditor(containerId, list, placeholder, onSave){
   const el=document.getElementById(containerId);
   const rows=list.map((item,i)=>`
-    <div class="list-item-row">
+    <div class="list-item-row" data-dkey="${item}">
       <span class="list-item-name">${item}</span>
       <button class="list-item-del" onclick="simpleListDel('${containerId}',${i})">×</button>
     </div>`).join('');
@@ -2235,15 +2294,20 @@ function simpleListDel(cid, idx){
 function renderFloatCatsEditor(){
   const cats=loadCats();
   const el=document.getElementById('editor-float-cats');
-  const rows=Object.entries(cats).map(([main,subs],i)=>{
-    const subItems=subs.map((s,j)=>`<div class="sub-list-item"><span>${s}</span><button onclick="delFloatSub('${esc(main)}',${j})">×</button></div>`).join('');
-    return `<div class="list-item-row">
+  const entries=Object.entries(cats);
+  const rows=entries.map(([main,subs],i)=>{
+    const subItems=subs.map((s,j)=>`
+      <div class="sub-list-item" data-dkey="${s}">
+        <span style="flex:1">${s}</span>
+        <button onclick="delFloatSub('${esc(main)}',${j})">×</button>
+      </div>`).join('');
+    return `<div class="list-item-row" data-dkey="${main}">
         <span class="list-item-name">${main}</span>
         <button class="list-item-expand" id="fce-exp-${i}" onclick="toggleFCE(${i})">▶</button>
         <button class="list-item-del" onclick="delFloatMain('${esc(main)}')">×</button>
       </div>
       <div id="fce-wrap-${i}" style="display:none">
-        <div class="sub-list">${subItems}
+        <div class="sub-list" data-dsubmain="${main}">${subItems}
           <div class="sub-add-row">
             <input class="sub-add-input" id="fce-sub-${i}" placeholder="新增子類別..." maxlength="15">
             <button class="sub-add-btn" onclick="addFloatSub('${esc(main)}',${i})">+</button>
@@ -2269,8 +2333,8 @@ function delFloatSub(main,idx){ const cats=loadCats(); if(!cats[main]) return; c
 function renderFixedEditor(){
   const fixed=loadFixed();
   const el=document.getElementById('editor-fixed');
-  const rows=fixed.map((f,i)=>`
-    <div class="list-item-row">
+  const rows=fixed.map(f=>`
+    <div class="list-item-row" data-dkey="${f.id}">
       <span class="list-item-name">${f.name}</span>
       <span class="inline-num-label">$</span>
       <input type="number" class="inline-num" value="${f.amount||''}" placeholder="0" min="0" step="1"
@@ -2302,11 +2366,73 @@ function delFixed(id){
   saveFixed(loadFixed().filter(f=>f.id!==id)); renderFixedEditor(); showToast('已刪除');
 }
 
+// ── 長按拖曳排序 ─────────────────────────────────────────────────────────────
+let _ds=null;
+function initDragSort(){
+  document.getElementById('panel-settings').addEventListener('touchstart',_dsTouchStart,{passive:true});
+  document.addEventListener('touchend',_dsTouchEnd,{passive:true});
+  document.addEventListener('touchcancel',_dsTouchEnd,{passive:true});
+}
+function _dsTouchStart(e){
+  const row=e.target.closest('.list-item-row[data-dkey],.sub-list-item[data-dkey]');
+  if(!row||e.target.closest('input,button,select')) return;
+  clearTimeout(_ds?.timer);
+  _ds={timer:setTimeout(()=>_dsActivate(row),350), row, active:false};
+}
+function _dsActivate(row){
+  if(navigator.vibrate) navigator.vibrate(30);
+  row.classList.add('ds-dragging');
+  const isSub=row.classList.contains('sub-list-item');
+  const container=isSub?row.closest('.sub-list'):row.closest('[data-dsave],[data-dgrp]');
+  _ds={..._ds, active:true, container, isSub};
+  document.addEventListener('touchmove',_dsTouchMove,{passive:false});
+}
+function _dsTouchMove(e){
+  if(!_ds?.active) return;
+  e.preventDefault();
+  const y=e.touches[0].clientY;
+  const sel=_ds.isSub?':scope>.sub-list-item[data-dkey]':':scope>.list-item-row[data-dkey]';
+  for(const r of _ds.container.querySelectorAll(sel)){
+    if(r===_ds.row) continue;
+    const rect=r.getBoundingClientRect();
+    if(y>=rect.top&&y<=rect.bottom){
+      _ds.container.insertBefore(_ds.row, y<rect.top+rect.height/2 ? r : r.nextSibling);
+      break;
+    }
+  }
+}
+function _dsTouchEnd(){
+  clearTimeout(_ds?.timer);
+  if(_ds?.active){
+    document.removeEventListener('touchmove',_dsTouchMove);
+    _ds.row.classList.remove('ds-dragging');
+    _dsCommit(_ds.container,_ds.isSub);
+  }
+  _ds=null;
+}
+function _dsCommit(container, isSub){
+  if(isSub){
+    const main=container.dataset.dsubmain; if(!main) return;
+    const cats=loadCats();
+    cats[main]=[...container.querySelectorAll(':scope>.sub-list-item[data-dkey]')].map(r=>r.dataset.dkey);
+    saveCats(cats); renderFloatCatsEditor(); refreshFormDropdowns(); return;
+  }
+  const keys=[...container.querySelectorAll(':scope>.list-item-row[data-dkey]')].map(r=>r.dataset.dkey);
+  const s=container.dataset.dsave, g=container.dataset.dgrp;
+  if(s==='fixed'){ const m=new Map(loadFixed().map(x=>[x.id,x])); saveFixed(keys.map(k=>m.get(k)).filter(Boolean)); renderFixedEditor(); }
+  else if(s==='loans'){ const m=new Map(loadLoans().map(x=>[x.id,x])); saveLoans(keys.map(k=>m.get(k)).filter(Boolean)); renderLoansEditor(); }
+  else if(s==='finplan'){ const m=new Map(loadFinPlan().map(x=>[x.id,x])); saveFinPlan(keys.map(k=>m.get(k)).filter(Boolean)); renderFinPlanEditor(); }
+  else if(s==='cclimits'){ const m=new Map(loadCCLimits().map(x=>[x.id,x])); saveCCLimits(keys.map(k=>m.get(k)).filter(Boolean)); renderCCLimitsEditor(); }
+  else if(s==='income'){ saveIncome(keys); renderAllSettingsEditors(); refreshFormDropdowns(); }
+  else if(s==='floatmain'){ const cats=loadCats(); saveCats(Object.fromEntries(keys.map(k=>[k,cats[k]||[]]))); renderFloatCatsEditor(); refreshFormDropdowns(); }
+  else if(g){ const mg=loadMG(); mg[g]=keys; saveMG(mg); renderAllSettingsEditors(); refreshFormDropdowns(); }
+}
+
 function renderLoansEditor(){
   const loans=loadLoans();
   const el=document.getElementById('editor-loans');
   const rows=loans.map(l=>`
-    <div class="list-item-row">
+    <div class="list-item-row" data-dkey="${l.id}">
       <span class="list-item-name">${l.name}</span>
       <span class="inline-num-label">期初本金 $</span>
       <input type="number" class="inline-num" value="${l.principal||''}" placeholder="0" min="0" step="1"
@@ -2444,8 +2570,16 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='1.3';
+const APP_VERSION='1.4';
 const CHANGELOG=[
+  {version:'1.4',date:'2026-05-03',items:[
+    '統計固定支出不再顯示預設數值，僅顯示當月實際記錄',
+    '財務規劃統計支援付款方式為「無」、主類別為帳戶名的收入記錄',
+    '設定各清單支援長按拖曳排序，順序同步至選單、統計及報表',
+    '記錄列表支援左滑刪除',
+    '付款方式新增「無」選項，選擇時記錄不顯示付款方式欄位',
+    '記錄列表顯示備註（小灰字）',
+  ]},
   {version:'1.3',date:'2026-05-03',items:[
     '記錄列表顯示備註（小灰字）',
     '付款方式新增「無」選項，適用於利息收入等不需付款方式的記錄',
