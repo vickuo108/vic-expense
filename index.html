@@ -63,7 +63,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .tx-item:last-child{border-bottom:none}
 .tx-icon-wrap{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
 .tx-body{flex:1;min-width:0;margin:0 10px}
-.tx-main{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-main{font-size:14px;font-weight:700;color:#1A1A2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tx-meta{font-size:11px;color:#9BA3AF;margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .tx-right{text-align:right;flex-shrink:0}
 .tx-amount-val{font-size:15px;font-weight:700}
@@ -550,7 +550,7 @@ input[type=number]{-moz-appearance:textfield}
         <button class="stats-qnav-btn" onclick="setScrollTo('ss-backup')">🛠️ 維護與工具</button>
       </div>
 
-      <div id="ss-bank" class="settings-section-title">🏦 銀行存款</div>
+      <div id="ss-bank" class="settings-section-title">🏦 銀行帳戶</div>
       <div class="list-editor" id="editor-bank"></div>
 
       <div id="ss-cc" class="settings-section-title">💳 信用卡</div>
@@ -789,29 +789,29 @@ const DEFAULT_TYPES = ['費用','收入','內部轉帳','清償負債','成本',
 
 const DEFAULT_METHODS_GROUPED = {
   '信用卡':['CUBE 卡','Unicard 卡','Uniopen 卡','Open Possible','Richart 卡','iLEO 卡','Sport 卡','momo卡','富邦Ｊ卡','星展 eco 卡','蝦皮聯名卡','DAWHO 卡','中信 LinePay 卡'],
-  '銀行存款':['台新銀行','大戶','將來銀行','Richart 主帳戶','Richart 子帳戶','第一銀行','國泰世華(台幣)','國泰世華(外幣)','韓元帳戶','玉山銀行','中國信託','鉅亨','Line Bank','Firstrade'],
+  '銀行帳戶':['台新銀行','大戶','將來銀行','Richart 主帳戶','Richart 子帳戶','第一銀行','國泰世華(台幣)','國泰世華(外幣)','韓元帳戶','玉山銀行','中國信託','鉅亨','Line Bank','Firstrade'],
   '電子錢包':['LinePay Money','悠遊錢包','摩斯卡','CUBE 悠遊卡','Selfroom','iPass Money'],
   '現金':['現金'],
 };
 
 const DEFAULT_FLOAT_CATS = {
   '主食':['早餐','午餐','晚餐','宵夜'],
-  '副食':['水','水果','蛋白粉','乳製品','膠原蛋白','葉黃素','體態管理'],
-  '零食、飲料':['咖啡','牛奶','甜點','酒','零食','飲料'],
-  '交通費':['捷運','公車','計程車/Uber','高鐵','加油','機油'],
-  '休閒娛樂':['電影','聚餐','遊戲','訂閱費','活動','看表演','社團','運彩','賭博','其他'],
-  '運動':['羽球','健身','運動用品'],
-  '生活居家用品':['生活必需品','清潔用品','洗衣用品','文具','收納用品','廚具','家具','3C用品','人工淚液','其他'],
-  '服飾配件':['外套','上衣＆褲子','褲子','內衣褲','耳環','吊飾/飾品'],
-  '保養美容':['保養品','剪/染頭髮','臉部','人工淚液','藥品','體態管理'],
-  '能源費':['電費','水費','瓦斯費'],
-  '醫療費':['西醫','中醫','健康檢查'],
-  '進修學習':['書籍','線上課程','實體課程','數位工具','韓文','基督信仰','其他'],
-  '旅遊':['機票','旅平險','住宿','交通'],
-  'IU':['MD','專輯','演唱會'],
-  '咪嚕':['食物','保健品','零食'],
-  'SOA':['SOA Module'],
-  '其他':['保險費','運費','雜項'],
+  '副食':['水','蛋白粉','水果','乳製品'],
+  '零食、飲料':['飲料','咖啡','牛奶','酒','高蛋白零食','甜點','零食'],
+  '生活居家用品':['生活必需品','文具','清潔用品','沐浴用品','洗髮用品','香氛用品','洗衣用品','收納用品','家具','廚具','3C用品','其他'],
+  '保養美容':['人工淚液','剪/染頭髮','保養品','香水','臉部','頭皮','運動按摩','藥品','腋下雷射','膠原蛋白','葉黃素','體態管理','指甲矯正'],
+  '交通費':['高鐵','捷運','加油','機油','停車費','公車','YouBike','火車','客運','飛機','計程車/Uber','機車修繕費','機捷','洗車'],
+  '醫療費':['牙醫','健康檢查','中醫','西醫','眼科'],
+  'IU':['MD','專輯','演唱會','應援','會員','New Balance','電影','年曆','其他'],
+  '運動':['健身','羽球','運動用品'],
+  '休閒娛樂':['訂閱費','聚餐','樂高','刺青','拼圖','電影','遊戲','看表演','賭博','運彩','活動','社團','其他'],
+  '服飾配件':['上衣','褲子','上衣＆褲子','鞋子','外套','帽子','包包','襪子','內衣褲','睡衣','吊飾','耳環'],
+  'SOA':['考試費','SOA Module'],
+  '進修學習':['基督信仰','韓文','線上課程','實體課程','爵士鼓','書籍','演講','數位工具','其他'],
+  '旅遊':['住','機票','食','衣','樂','行','eSIM卡','旅平險','伴手禮'],
+  '咪嚕':['食物','保健品','零食','用品','醫生'],
+  '能源費':['水費','電費','瓦斯費'],
+  '其他':['保險費','運費'],
 };
 
 const DEFAULT_INCOME_CATS = ['工作薪資','獎金','加班費','刷卡回饋','利息收入','股息','投資收入','發票中獎','其他收入'];
@@ -956,7 +956,28 @@ let statYear=new Date().getFullYear(), statMonth=new Date().getMonth()+1;
 let fixedChart=null, floatPieChart=null, finChart=null, ccBarChart=null;
 
 // ─── Init ──────────────────────────────────────────────────────────────────
+function migrateData(){
+  // 將 localStorage 裡的舊 key '銀行存款' 改為 '銀行帳戶'
+  const raw=localStorage.getItem('vic2_methods_grouped');
+  if(raw){
+    try{
+      const mg=JSON.parse(raw);
+      if('銀行存款' in mg && !('銀行帳戶' in mg)){
+        mg['銀行帳戶']=mg['銀行存款'];
+        delete mg['銀行存款'];
+        localStorage.setItem('vic2_methods_grouped',JSON.stringify(mg));
+      }
+    }catch(e){}
+  }
+  // 重設主類別/子類別為 Excel 匯入版本（僅執行一次）
+  if(!localStorage.getItem('vic2_migrated_cats_v1')){
+    localStorage.removeItem('vic2_categories');
+    localStorage.setItem('vic2_migrated_cats_v1','1');
+  }
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
+  migrateData();
   initHeader();
   populateAddForm();
   populateEditForm();
@@ -1031,13 +1052,22 @@ function fillMethodSelect(el){
   });
 }
 
-function fillMainSelect(el, blank=true){
+function getMethodGroup(methodVal){
+  if(!methodVal) return '';
+  const mg=loadMG();
+  for(const [grp,methods] of Object.entries(mg)){
+    if(methods.includes(methodVal)) return grp;
+  }
+  return '';
+}
+
+function fillMainSelect(el, methodVal='', blank=true){
   el.innerHTML=blank?'<option value="">（選填）</option>':'';
   const cats=loadCats(); const income=loadIncome(); const plans=loadFinPlan();
   const g1=document.createElement('optgroup'); g1.label='浮動支出';
   Object.keys(cats).forEach(c=>{ const op=document.createElement('option'); op.value=c; op.textContent=c; g1.appendChild(op); });
   el.appendChild(g1);
-  ['固定支出','貸款'].forEach(v=>{ const op=document.createElement('option'); op.value=v; op.textContent=v; el.appendChild(op); });
+  ['固定支出','貸款','繳信用卡款'].forEach(v=>{ const op=document.createElement('option'); op.value=v; op.textContent=v; el.appendChild(op); });
   if(plans.length){
     const g3=document.createElement('optgroup'); g3.label='財務規劃';
     plans.forEach(p=>{ const op=document.createElement('option'); op.value=p.name; op.textContent=p.name; g3.appendChild(op); });
@@ -1046,12 +1076,28 @@ function fillMainSelect(el, blank=true){
   const g2=document.createElement('optgroup'); g2.label='收入';
   income.forEach(c=>{ const op=document.createElement('option'); op.value=c; op.textContent=c; g2.appendChild(op); });
   el.appendChild(g2);
+  const grp=getMethodGroup(methodVal);
+  if(grp==='銀行帳戶'){
+    const gx=document.createElement('optgroup'); gx.label='銀行帳戶操作';
+    ['提款','轉帳','現金存入','手續費','奉獻'].forEach(v=>{ const op=document.createElement('option'); op.value=v; op.textContent=v; gx.appendChild(op); });
+    el.appendChild(gx);
+  } else if(grp==='電子錢包'){
+    const gx=document.createElement('optgroup'); gx.label='電子錢包操作';
+    const op=document.createElement('option'); op.value='加值'; op.textContent='加值'; gx.appendChild(op);
+    el.appendChild(gx);
+  }
 }
 
 function updateSubByMain(main, subEl, blank=true){
   const cats=loadCats(); const fixed=loadFixed(); const loans=loadLoans();
+  const mg=loadMG(); const plans=loadFinPlan();
+  const bank=mg['銀行帳戶']||[]; const ew=mg['電子錢包']||[]; const cc=mg['信用卡']||[];
   if(main==='固定支出') fillSelect(subEl, fixed.map(f=>f.name), blank?'（選填）':'');
   else if(main==='貸款') fillSelect(subEl, loans.map(l=>l.name), blank?'（選填）':'');
+  else if(main==='轉帳') fillSelect(subEl, ['轉帳手續費',...bank,...ew], blank?'（選填）':'');
+  else if(main==='加值') fillSelect(subEl, ['現金',...bank,...ew,...cc], blank?'（選填）':'');
+  else if(main==='繳信用卡款') fillSelect(subEl, cc, blank?'（選填）':'');
+  else if(plans.some(p=>p.name===main)) fillSelect(subEl, [...bank,...ew], blank?'（選填）':'');
   else fillSelect(subEl, cats[main]||[], blank?'（選填）':'');
 }
 
@@ -1127,6 +1173,14 @@ function initFormListeners(){
     });
   });
 
+  document.getElementById('f-method').addEventListener('change',()=>{
+    const methodVal=document.getElementById('f-method').value;
+    const mainEl=document.getElementById('f-main');
+    const curMain=mainEl.value;
+    fillMainSelect(mainEl, methodVal);
+    mainEl.value=curMain;
+    updateSubByMain(mainEl.value, document.getElementById('f-sub'));
+  });
   document.getElementById('f-type').addEventListener('change', autoFillAmtSign);
   document.getElementById('btn-add-submit').addEventListener('click', submitAdd);
   attachAmtFormat('f-amount');
@@ -1136,8 +1190,8 @@ function initFormListeners(){
 function autoFillAmtSign(){
   const t=document.getElementById('f-type').value;
   const el=document.getElementById('f-amount');
-  if((t==='費用'||t==='成本')&&el.value==='') el.value='-';
-  if(t!=='費用'&&t!=='成本'&&el.value==='-') el.value='';
+  if((t==='費用'||t==='成本'||t==='清償負債'||t==='內部轉帳'||t==='投資')&&el.value==='') el.value='-';
+  if(t!=='費用'&&t!=='成本'&&t!=='清償負債'&&t!=='內部轉帳'&&t!=='投資'&&el.value==='-') el.value='';
 }
 function calcLoanInterest(prefix){
   const amt=parseAmt(document.getElementById(`${prefix}-amount`).value);
@@ -1261,12 +1315,11 @@ function txItemHTML(r){
   const badge=r.split===0?'<span class="badge badge-gf">全女友</span>'
     :r.split===1?'<span class="badge badge-half">各半</span>'
     :r.split==='repay'?'<span class="badge badge-repay">GF還款</span>':'';
-  const sub=[r.method,r.sub||r.main,r.note].filter(Boolean).join(' · ');
+  const mainLine=[r.method,r.main||r.type,r.sub].filter(Boolean).join(' · ');
   return `<div class="tx-item" onclick="openEdit('${r.id}')">
     <div class="tx-icon-wrap ${bg}">${ic}</div>
     <div class="tx-body">
-      <div class="tx-main">${r.main||r.type}${r.sub?' · '+r.sub:''} ${badge}</div>
-      <div class="tx-meta">${sub}</div>
+      <div class="tx-main">${mainLine} ${badge}</div>
     </div>
     <div class="tx-right">
       <div class="tx-amount-val ${amtCls}">${amtStr}</div>
@@ -1283,6 +1336,13 @@ function initEditListeners(){
   mainEl.addEventListener('change',()=>{
     updateSubByMain(mainEl.value,subEl);
     document.getElementById('e-loan-extra').style.display=mainEl.value==='貸款'?'block':'none';
+  });
+  document.getElementById('e-method').addEventListener('change',()=>{
+    const methodVal=document.getElementById('e-method').value;
+    const curMain=mainEl.value;
+    fillMainSelect(mainEl, methodVal);
+    mainEl.value=curMain;
+    updateSubByMain(mainEl.value, subEl);
   });
   lpEl.addEventListener('input',calcLoanInterest.bind(null,'e'));
   document.getElementById('e-amount').addEventListener('input',calcLoanInterest.bind(null,'e'));
@@ -1301,7 +1361,7 @@ function openEdit(id){
   document.getElementById('e-date').value=r.date;
   document.getElementById('e-type').value=r.type;
   document.getElementById('e-method').value=r.method;
-  fillMainSelect(document.getElementById('e-main'));
+  fillMainSelect(document.getElementById('e-main'), r.method||'');
   document.getElementById('e-main').value=r.main||'';
   updateSubByMain(r.main||'', document.getElementById('e-sub'));
   document.getElementById('e-sub').value=r.sub||'';
@@ -1620,28 +1680,31 @@ function renderStats(){
   const balEl=document.getElementById('s-balance');
   balEl.textContent=(bal>=0?'+':'')+fmt(bal);
   balEl.className=bal>=0?'clr-income':'clr-expense';
-  // 可用金額（標記可用的帳戶合計）
+  // 可用金額（標記可用的帳戶合計，含被轉入金額）
   const bd=loadAcctBal(); const mg2=loadMG(); const avail2=loadAcctAvail();
-  const bankEwAccts=[...(mg2['銀行存款']||[]),...(mg2['電子錢包']||[])];
+  const bankEwAccts=[...(mg2['銀行帳戶']||[]),...(mg2['電子錢包']||[])];
   const cashAvail=bankEwAccts.reduce((s,name)=>{
     if(!avail2[name]) return s;
     const open=bd[name]||0;
     const allTx=data.filter(r=>r.method===name).reduce((ss,r)=>ss+r.amount,0);
-    return s+open+allTx;
+    const incoming=data.filter(r=>r.main==='轉帳'&&r.sub===name).reduce((ss,r)=>ss-r.amount,0);
+    return s+open+allTx+incoming;
   },0);
   const cashEl=document.getElementById('s-cash');
   cashEl.textContent=(cashAvail<0?'-':'')+'$'+fmt(Math.abs(cashAvail));
   cashEl.className='stat-box-val '+(cashAvail>=0?'clr-income':'clr-expense');
-  // 可用現金（現金帳戶合計）
+  // 可用現金（現金帳戶合計 + 提款增加 + 現金存入減少）
   const cashAccts=mg2['現金']||[];
   const cashOnly=cashAccts.reduce((s,name)=>{
     const open=bd[name]||0;
     const allTx=data.filter(r=>r.method===name).reduce((ss,r)=>ss+r.amount,0);
     return s+open+allTx;
   },0);
+  const cashAdjust=data.filter(r=>r.main==='提款'||r.main==='現金存入').reduce((s,r)=>s-r.amount,0);
+  const totalCash=cashOnly+cashAdjust;
   const cashOnlyEl=document.getElementById('s-cash-only');
-  cashOnlyEl.textContent=(cashOnly<0?'-':'')+'$'+fmt(Math.abs(cashOnly));
-  cashOnlyEl.className='stat-box-val '+(cashOnly>=0?'clr-income':'clr-expense');
+  cashOnlyEl.textContent=(totalCash<0?'-':'')+'$'+fmt(Math.abs(totalCash));
+  cashOnlyEl.className='stat-box-val '+(totalCash>=0?'clr-income':'clr-expense');
   // 月可用餘額
   const mobal=totalInc+totalExp;
   const mobalEl=document.getElementById('s-month-bal');
@@ -1675,16 +1738,24 @@ function renderCCSection(data, prefix){
   const bal=loadAcctBal(); const limits=loadCCLimits();
   const totalLimit=limits.reduce((s,l)=>s+(l.amount||0),0);
   let tCharge=0,tPay=0,tOut=0;
+  // 判斷是否為某張卡的繳款記錄（支援舊方式與新方式）
+  const isPayment=(r,name)=>
+    (r.method===name&&r.type==='清償負債')||
+    (r.main==='繳信用卡款'&&r.sub===name);
   const rows=cards.map(name=>{
+    // 月刷卡：該卡本月的消費（method=卡名，非清償負債）
     const moRecs=data.filter(r=>r.method===name&&r.date.startsWith(prefix));
     const charge=moRecs.filter(r=>r.type!=='清償負債'&&r.amount<0).reduce((s,r)=>s+r.amount,0);
-    const payment=moRecs.filter(r=>r.type==='清償負債').reduce((s,r)=>s+r.amount,0);
+    // 本月繳款：舊方式＋新方式
+    const payment=data.filter(r=>isPayment(r,name)&&r.date.startsWith(prefix)).reduce((s,r)=>s+r.amount,0);
+    // 尚待繳清：期初餘額 + 全部刷卡 - 全部繳款（含新舊兩種方式）
     const openOut=bal[name]||0;
     const allCharges=data.filter(r=>r.method===name&&r.type!=='清償負債'&&r.amount<0).reduce((s,r)=>s+Math.abs(r.amount),0);
-    const allPayments=data.filter(r=>r.method===name&&r.type==='清償負債').reduce((s,r)=>s+Math.abs(r.amount),0);
+    const allPayments=data.filter(r=>isPayment(r,name)).reduce((s,r)=>s+Math.abs(r.amount),0);
     const outstanding=openOut+allCharges-allPayments;
     tCharge+=charge; tPay+=payment; if(outstanding>0) tOut+=outstanding;
-    const lastPay=data.filter(r=>r.method===name&&r.type==='清償負債').sort((a,b)=>b.date.localeCompare(a.date))[0];
+    // 上次繳款日：取最新的繳款記錄日期
+    const lastPay=data.filter(r=>isPayment(r,name)).sort((a,b)=>b.date.localeCompare(a.date))[0];
     const dueStr=lastPay?lastPay.date.slice(5).replace('-','/'):'';
     return `<tr>
       <td>${name}</td>
@@ -1701,18 +1772,23 @@ function renderCCSection(data, prefix){
 
 function renderBankSection(data, prefix){
   const mg=loadMG();
-  const bankAccts=mg['銀行存款']||[];
+  const bankAccts=mg['銀行帳戶']||[];
   const bal=loadAcctBal(); const avail=loadAcctAvail();
   let tPull=0,tPush=0,tOther=0,tBal=0,tAvail=0;
   const nc=n=>n===0?'-':`<span class="${n<0?'clr-expense':n>0?'clr-income':''}">${n>0?'+':''}${fmt(n)}</span>`;
   const rows=bankAccts.map(name=>{
     const moRecs=data.filter(r=>r.method===name&&r.date.startsWith(prefix));
-    const pull=moRecs.filter(r=>r.type==='內部轉帳'&&r.amount<0).reduce((s,r)=>s+r.amount,0);
-    const push=moRecs.filter(r=>r.type==='內部轉帳'&&r.amount>0).reduce((s,r)=>s+r.amount,0);
-    const other=moRecs.filter(r=>r.type!=='內部轉帳').reduce((s,r)=>s+r.amount,0);
+    // 本月提款（現金離開帳戶，主類別=提款）
+    const pull=moRecs.filter(r=>r.main==='提款').reduce((s,r)=>s+r.amount,0);
+    // 本月存錢（現金存入帳戶，主類別=現金存入）
+    const push=moRecs.filter(r=>r.main==='現金存入').reduce((s,r)=>s+r.amount,0);
+    // 其他進出（非現金相關）
+    const other=moRecs.filter(r=>r.main!=='提款'&&r.main!=='現金存入').reduce((s,r)=>s+r.amount,0);
     const openBal=bal[name]||0;
     const allTx=data.filter(r=>r.method===name).reduce((s,r)=>s+r.amount,0);
-    const balance=openBal+allTx;
+    // 被轉入：其他帳戶以轉帳方式轉進此帳戶（main=轉帳, sub=此帳戶）
+    const incoming=data.filter(r=>r.main==='轉帳'&&r.sub===name).reduce((s,r)=>s-r.amount,0);
+    const balance=openBal+allTx+incoming;
     const isAvail=avail[name]||false;
     tPull+=pull; tPush+=push; tOther+=other; tBal+=balance;
     if(isAvail) tAvail+=balance;
@@ -1722,10 +1798,10 @@ function renderBankSection(data, prefix){
       <td>${push?nc(push):'-'}</td>
       <td>${other?nc(other):'-'}</td>
       <td>${fmt(balance)}</td>
-      <td>${isAvail?fmt(balance):''}</td>
+      <td>${isAvail?`<span class="clr-income">${fmt(balance)}</span>`:'-'}</td>
     </tr>`;
   }).join('');
-  const total=`<tr class="total-row"><td>銀行區合計</td><td>${tPull?`<span class="clr-expense">${fmt(tPull)}</span>`:'-'}</td><td>${tPush?`<span class="clr-income">+${fmt(tPush)}</span>`:'-'}</td><td>${nc(tOther)}</td><td>${fmt(tBal)}</td><td>${fmt(tAvail)}</td></tr>`;
+  const total=`<tr class="total-row"><td>銀行區合計</td><td>${tPull?`<span class="clr-expense">${fmt(tPull)}</span>`:'-'}</td><td>${tPush?nc(tPush):'-'}</td><td>${nc(tOther)}</td><td>${fmt(tBal)}</td><td>${tAvail?`<span class="clr-income">${fmt(tAvail)}</span>`:'-'}</td></tr>`;
   document.getElementById('bank-table-body').innerHTML=rows+total;
 }
 
@@ -1834,11 +1910,12 @@ function renderFixedSection(data, prefix){
   const rows=fixed.map(item=>{
     const rec=data.filter(r=>r.date.startsWith(prefix)&&r.main==='固定支出'&&r.sub===item.name);
     const amt=rec.length?rec.reduce((s,r)=>s+r.amount,0):-(item.amount||0);
-    const lastRec=rec.sort((a,b)=>b.date.localeCompare(a.date))[0];
+    const lastRec=rec.slice().sort((a,b)=>b.date.localeCompare(a.date))[0];
     const dayDisp=lastRec
       ?lastRec.date.slice(5).replace('-','/')
       :(item.day?`${prefix.slice(5)}/${String(item.day).padStart(2,'0')}`:'');
-    const method=lastRec&&lastRec.method?lastRec.method:(item.method||'');
+    const histRec=data.filter(r=>r.main==='固定支出'&&r.sub===item.name).sort((a,b)=>b.date.localeCompare(a.date))[0];
+    const method=histRec?.method||'';
     if(amt) total+=amt;
     return `<tr>
       <td>${item.name}</td>
@@ -1930,7 +2007,7 @@ function renderCCChart(data, prefix){
 function renderAllSettingsEditors(){
   const mg=loadMG();
   renderCCEditor('editor-cc', mg['信用卡']||[]);
-  renderBankEditor('editor-bank', mg['銀行存款']||[], '銀行存款');
+  renderBankEditor('editor-bank', mg['銀行帳戶']||[], '銀行帳戶');
   renderBankEditor('editor-ewallet', mg['電子錢包']||[], '電子錢包');
   renderBalanceListEditor('editor-cash', mg['現金']||[], '現金', '期初');
   renderFloatCatsEditor();
@@ -2038,17 +2115,29 @@ function saveAcctBalItem(name,val){
   if(n) bal[name]=n; else delete bal[name];
   saveAcctBal(bal);
 }
+function refreshFormDropdowns(){
+  const fMethodEl=document.getElementById('f-method');
+  const curMethod=fMethodEl.value;
+  fillMethodSelect(fMethodEl);
+  fMethodEl.value=curMethod;
+  const fMainEl=document.getElementById('f-main');
+  const curMain=fMainEl.value;
+  fillMainSelect(fMainEl, fMethodEl.value);
+  fMainEl.value=curMain;
+  updateSubByMain(fMainEl.value, document.getElementById('f-sub'));
+  populateFilterDropdowns();
+}
 function balListAdd(cid,groupKey){
   const inp=document.getElementById(cid+'-inp'); const val=inp.value.trim(); if(!val) return;
   const mg=loadMG(); if(!mg[groupKey]) mg[groupKey]=[];
   if(mg[groupKey].includes(val)){showToast('已存在相同名稱');return;}
-  mg[groupKey].push(val); saveMG(mg); inp.value=''; renderAllSettingsEditors(); showToast('✅ 已新增');
+  mg[groupKey].push(val); saveMG(mg); inp.value=''; renderAllSettingsEditors(); refreshFormDropdowns(); showToast('✅ 已新增');
 }
 function balListDel(cid,name,groupKey){
   if(!confirm('確定刪除？')) return;
   const mg=loadMG(); mg[groupKey]=(mg[groupKey]||[]).filter(x=>x!==name); saveMG(mg);
   const bal=loadAcctBal(); delete bal[name]; saveAcctBal(bal);
-  renderAllSettingsEditors(); showToast('已刪除');
+  renderAllSettingsEditors(); refreshFormDropdowns(); showToast('已刪除');
 }
 
 function renderFinPlanEditor(){
@@ -2145,10 +2234,10 @@ function toggleFCE(i){
   const wrap=document.getElementById(`fce-wrap-${i}`), btn=document.getElementById(`fce-exp-${i}`);
   const open=wrap.style.display==='none'; wrap.style.display=open?'block':'none'; btn.textContent=open?'▼':'▶';
 }
-function addFloatMain(){ const inp=document.getElementById('fce-main-inp'), val=inp.value.trim(); if(!val) return; const cats=loadCats(); if(cats[val]!==undefined){showToast('已存在');return;} cats[val]=[]; saveCats(cats); inp.value=''; renderFloatCatsEditor(); showToast('✅ 已新增'); }
-function delFloatMain(main){ if(!confirm(`刪除「${main}」？`)) return; const cats=loadCats(); delete cats[main]; saveCats(cats); renderFloatCatsEditor(); showToast('已刪除'); }
-function addFloatSub(main,i){ const inp=document.getElementById(`fce-sub-${i}`), val=inp.value.trim(); if(!val) return; const cats=loadCats(); if(!cats[main]) return; if(cats[main].includes(val)){showToast('已存在');return;} cats[main].push(val); saveCats(cats); inp.value=''; renderFloatCatsEditor(); const w=document.getElementById(`fce-wrap-${i}`); if(w){w.style.display='block'; document.getElementById(`fce-exp-${i}`).textContent='▼';} showToast('✅ 已新增'); }
-function delFloatSub(main,idx){ const cats=loadCats(); if(!cats[main]) return; cats[main].splice(idx,1); saveCats(cats); renderFloatCatsEditor(); showToast('已刪除'); }
+function addFloatMain(){ const inp=document.getElementById('fce-main-inp'), val=inp.value.trim(); if(!val) return; const cats=loadCats(); if(cats[val]!==undefined){showToast('已存在');return;} cats[val]=[]; saveCats(cats); inp.value=''; renderFloatCatsEditor(); refreshFormDropdowns(); showToast('✅ 已新增'); }
+function delFloatMain(main){ if(!confirm(`刪除「${main}」？`)) return; const cats=loadCats(); delete cats[main]; saveCats(cats); renderFloatCatsEditor(); refreshFormDropdowns(); showToast('已刪除'); }
+function addFloatSub(main,i){ const inp=document.getElementById(`fce-sub-${i}`), val=inp.value.trim(); if(!val) return; const cats=loadCats(); if(!cats[main]) return; if(cats[main].includes(val)){showToast('已存在');return;} cats[main].push(val); saveCats(cats); inp.value=''; renderFloatCatsEditor(); refreshFormDropdowns(); const w=document.getElementById(`fce-wrap-${i}`); if(w){w.style.display='block'; document.getElementById(`fce-exp-${i}`).textContent='▼';} showToast('✅ 已新增'); }
+function delFloatSub(main,idx){ const cats=loadCats(); if(!cats[main]) return; cats[main].splice(idx,1); saveCats(cats); renderFloatCatsEditor(); refreshFormDropdowns(); showToast('已刪除'); }
 
 function renderFixedEditor(){
   const fixed=loadFixed();
@@ -2328,8 +2417,24 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='1.0';
+const APP_VERSION='1.1';
 const CHANGELOG=[
+  {version:'1.1',date:'2026-05-02',items:[
+    '付款方式分組「銀行存款」更名為「銀行帳戶」，舊資料自動遷移',
+    '選銀行帳戶付款時，主類別新增提款、轉帳、現金存入、手續費、奉獻',
+    '選電子錢包付款時，主類別新增加值',
+    '主類別新增「繳信用卡款」，子類別自動列出信用卡清單',
+    '轉帳、加值、財務規劃帳戶的子類別自動帶出帳戶/卡片選項',
+    '主類別及子類別依 Excel 清單全面更新（新增保養美容細項、交通費擴充等）',
+    '清償負債、內部轉帳、投資選擇後，金額欄自動填入負號',
+    '信用卡繳款可用「繳信用卡款」主類別記帳，統計自動扣除尚待繳清金額',
+    '固定支出統計自動抓取歷史記錄的付款方式',
+    '銀行區：提款增加可用現金、現金存入減少可用現金',
+    '銀行區：轉帳記帳後，目標帳戶餘額自動更新',
+    '銀行區：本月提款/存錢欄位依主類別判斷，其他進出為非現金相關',
+    '記錄列表改為「付款方式 · 主類別 · 子類別」粗黑字顯示',
+    '設定頁新增/刪除帳戶或類別後，新增頁選單即時連動更新',
+  ]},
   {version:'1.0',date:'2026-05-02',items:[
     '統計頁新增固定支出明細表（方式、金額、支出日自動抓取）',
     '報表頁預估數改為每月可獨立輸入，不再共用同一份預算',
