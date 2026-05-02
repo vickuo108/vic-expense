@@ -215,9 +215,50 @@ input[type=number]{-moz-appearance:textfield}
 .stats-quicknav::-webkit-scrollbar{display:none}
 .stats-qnav-btn{flex-shrink:0;padding:5px 11px;border-radius:20px;border:1.5px solid #E5E7EB;background:#fff;font-size:12px;cursor:pointer;white-space:nowrap;color:#374151;font-weight:500}
 .stats-qnav-btn:active{background:#EEF2FF;border-color:#3B5BDB;color:#3B5BDB}
+.rep-budget-input{width:72px;padding:3px 5px;border:1.5px solid #CBD5E1;border-radius:6px;font-size:11px;text-align:right;background:#F8FAFC;color:#374151}
+.rep-budget-input:focus{outline:none;border-color:#3B5BDB;background:#fff}
+.update-banner{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:linear-gradient(135deg,#1A56DB,#3B5BDB);color:#fff;z-index:800;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top));display:none;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,.25)}
+.update-banner.show{display:flex}
+.update-banner-btn{background:#fff;color:#1A56DB;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.glossary-overlay{position:fixed;inset:0;background:#F0F2F5;z-index:600;display:none;flex-direction:column}
+.glossary-overlay.open{display:flex}
+.glossary-header{background:linear-gradient(135deg,#3B5BDB,#5C7CFA);color:#fff;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));display:flex;align-items:center;gap:12px;flex-shrink:0}
+.glossary-body{flex:1;overflow-y:auto;padding:12px 12px 32px;-webkit-overflow-scrolling:touch}
+.glossary-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.glossary-term{font-size:16px;font-weight:700;color:#1A1A2E;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.glossary-def{font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap;cursor:pointer}
+.glossary-def.collapsed{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;cursor:pointer}
+.glossary-actions{display:flex;gap:5px;flex-shrink:0}
+.glossary-edit-btn{background:#EEF2FF;border:none;border-radius:6px;padding:4px 9px;font-size:12px;color:#3B5BDB;cursor:pointer;white-space:nowrap}
+.glossary-del-btn{background:#FFF1F2;border:none;border-radius:6px;padding:4px 8px;font-size:12px;color:#EF4444;cursor:pointer}
+.glossary-toggle{font-size:10px;color:#9BA3AF;cursor:pointer;margin-top:4px;display:block;text-align:right}
 </style>
 </head>
 <body>
+<!-- 更新橫幅 -->
+<div class="update-banner" id="update-banner">
+  <div>
+    <div style="font-size:14px;font-weight:700">🎉 有新版本可用</div>
+    <div style="font-size:11px;opacity:.85;margin-top:1px">點擊右側立即更新</div>
+  </div>
+  <button class="update-banner-btn" onclick="applyUpdate()">立即更新</button>
+</div>
+
+<!-- 更新日誌 Modal -->
+<div class="overlay" id="changelog-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">✨ App 已更新</div>
+        <div style="font-size:12px;color:#9BA3AF;margin-top:2px" id="changelog-version-label"></div>
+      </div>
+      <button class="modal-close" onclick="dismissChangelog()">✕</button>
+    </div>
+    <ul id="changelog-list" style="list-style:none;padding:0;margin:0"></ul>
+    <button class="btn btn-primary" style="width:100%;margin-top:18px" onclick="dismissChangelog()">知道了 👍</button>
+  </div>
+</div>
+
 <div class="app">
 
   <div class="header">
@@ -341,6 +382,7 @@ input[type=number]{-moz-appearance:textfield}
         <button class="stats-qnav-btn" onclick="statScrollTo('sec-income')">💰 本月收入</button>
         <button class="stats-qnav-btn" onclick="statScrollTo('sec-ewallet')">👛 電子錢包</button>
         <button class="stats-qnav-btn" onclick="statScrollTo('sec-float')">🛒 浮動支出</button>
+        <button class="stats-qnav-btn" onclick="statScrollTo('sec-fixed-table')">🔒 固定支出</button>
         <button class="stats-qnav-btn" onclick="statScrollTo('sec-cc')">💳 信用卡</button>
         <button class="stats-qnav-btn" onclick="statScrollTo('sec-bank')">🏦 銀行</button>
         <button class="stats-qnav-btn" onclick="statScrollTo('sec-gf')">👩‍❤️‍👨 女友</button>
@@ -406,6 +448,15 @@ input[type=number]{-moz-appearance:textfield}
           <table class="loan-table">
             <thead><tr><th>項目</th><th style="text-align:right">金額</th><th style="text-align:right">預算剩餘</th></tr></thead>
             <tbody id="float-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="chart-card" id="sec-fixed-table">
+        <div class="chart-title">🔒 固定支出</div>
+        <div style="overflow-x:auto">
+          <table class="loan-table">
+            <thead><tr><th>項目</th><th>方式</th><th style="text-align:right">金額</th><th style="text-align:right">支出日</th></tr></thead>
+            <tbody id="fixed-table-body"></tbody>
           </table>
         </div>
       </div>
@@ -492,11 +543,11 @@ input[type=number]{-moz-appearance:textfield}
         <button class="stats-qnav-btn" onclick="setScrollTo('ss-income')">💰 收入類別</button>
         <button class="stats-qnav-btn" onclick="setScrollTo('ss-finplan')">📈 財務規劃</button>
         <button class="stats-qnav-btn" onclick="setScrollTo('ss-float')">🛒 浮動支出</button>
-        <button class="stats-qnav-btn" onclick="setScrollTo('ss-budget')">💰 月預算</button>
+
         <button class="stats-qnav-btn" onclick="setScrollTo('ss-fixed')">🔒 固定支出</button>
         <button class="stats-qnav-btn" onclick="setScrollTo('ss-loan')">🏦 貸款</button>
         <button class="stats-qnav-btn" onclick="setScrollTo('ss-cclimit')">💳 信用卡額度</button>
-        <button class="stats-qnav-btn" onclick="setScrollTo('ss-backup')">💾 備份</button>
+        <button class="stats-qnav-btn" onclick="setScrollTo('ss-backup')">🛠️ 維護與工具</button>
       </div>
 
       <div id="ss-bank" class="settings-section-title">🏦 銀行存款</div>
@@ -522,9 +573,6 @@ input[type=number]{-moz-appearance:textfield}
       <div id="ss-float" class="settings-section-title">🛒 浮動支出類別</div>
       <div class="list-editor" id="editor-float-cats"></div>
 
-      <div id="ss-budget" class="settings-section-title">💰 月預算設定</div>
-      <div style="font-size:12px;color:#9BA3AF;padding:0 4px 8px">各類別每月預算，支出填負數（如 -10000），收入填正數。</div>
-      <div class="list-editor" id="editor-budgets"></div>
 
       <div id="ss-fixed" class="settings-section-title">🔒 固定支出</div>
       <div style="font-size:12px;color:#9BA3AF;padding:0 4px 8px">設定每月固定金額，新增記帳時自動帶入。</div>
@@ -538,7 +586,7 @@ input[type=number]{-moz-appearance:textfield}
       <div style="font-size:12px;color:#9BA3AF;padding:0 4px 8px">各銀行信用卡額度，用於計算使用率。</div>
       <div class="list-editor" id="editor-cc-limits"></div>
 
-      <div id="ss-backup" class="settings-section-title">💾 資料備份</div>
+      <div id="ss-backup" class="settings-section-title">🛠️ 維護與工具</div>
       <button class="settings-btn" onclick="exportJSON()">
         <div class="s-icon" style="background:#F0FDF4">📤</div>
         <div class="s-text"><div class="s-title">匯出 JSON 備份</div><div class="s-desc">下載所有記帳資料與清單設定</div></div>
@@ -560,7 +608,13 @@ input[type=number]{-moz-appearance:textfield}
         <span class="s-arrow">›</span>
       </button>
 
-      <div style="text-align:center;font-size:11px;color:#D1D5DB;margin-top:20px;padding-bottom:8px">Vic 記帳本 v2.0 · 2026</div>
+      <button class="settings-btn" onclick="openGlossary()">
+        <div class="s-icon" style="background:#EEF2FF">📚</div>
+        <div class="s-text"><div class="s-title">財務語言</div><div class="s-desc">常見財務名詞解釋，可自行新增與編輯</div></div>
+        <span class="s-arrow">›</span>
+      </button>
+
+      <div style="text-align:center;font-size:11px;color:#D1D5DB;margin-top:20px;padding-bottom:8px">Vic 記帳本 v1.0 · 2026</div>
     </div>
 
     <!-- ── 財務報表 Panel ── -->
@@ -577,6 +631,9 @@ input[type=number]{-moz-appearance:textfield}
       <!-- 年度報表 -->
       <div id="rep-view-year">
         <div id="rep-month-selector" style="display:flex;gap:6px;overflow-x:auto;padding:0 0 10px;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none"></div>
+        <div id="rep-copy-btn-wrap" style="display:none;margin-bottom:8px">
+          <button onclick="copyLastMonthBudget()" style="padding:7px 14px;border:1.5px solid #CBD5E1;border-radius:8px;background:#fff;font-size:12px;color:#374151;cursor:pointer">📋 帶入上月預估</button>
+        </div>
         <table class="report-table">
           <thead><tr>
             <th>項目</th><th>預估</th><th>實際</th><th>差距</th><th>達成率</th>
@@ -627,6 +684,23 @@ input[type=number]{-moz-appearance:textfield}
       <span class="nav-icon">⚙️</span><span class="nav-label">設定</span>
     </button>
   </nav>
+</div>
+
+<!-- Glossary Overlay -->
+<div class="glossary-overlay" id="glossary-overlay">
+  <div class="glossary-header">
+    <button onclick="closeGlossary()" style="background:none;border:none;color:#fff;font-size:26px;line-height:1;cursor:pointer;padding:0 4px">‹</button>
+    <div style="flex:1">
+      <div style="font-size:18px;font-weight:700">📚 財務語言</div>
+      <div style="font-size:12px;opacity:.8">點擊說明可展開／收合</div>
+    </div>
+    <button onclick="showAddGlossary()" style="background:rgba(255,255,255,.2);border:none;border-radius:8px;padding:6px 14px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">＋ 新增</button>
+  </div>
+  <div class="glossary-body">
+    <input type="text" id="glossary-search" placeholder="🔍 搜尋詞彙或說明…" oninput="renderGlossaryList()" style="width:100%;padding:10px 13px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:14px;background:#fff;margin-bottom:10px;box-sizing:border-box">
+    <div id="glossary-list"></div>
+    <div style="text-align:center;font-size:11px;color:#C9CDD4;margin-top:16px">資料來源：阿金！人生進化中之人生優化指南 · 風險管理課</div>
+  </div>
 </div>
 
 <!-- Edit Modal -->
@@ -845,7 +919,18 @@ function saveFinPlan(a){ save(KEY_FIN_PLAN, a); }
 const KEY_BUDGETS='vic2_budgets';
 function loadBudgets(){ return load(KEY_BUDGETS,{}); }
 function saveBudgets(o){ save(KEY_BUDGETS,o); }
-function saveBudgetAmt(cat,val){ const b=loadBudgets(); const n=parseFloat(val); if(!isNaN(n)) b[cat]=n; else delete b[cat]; saveBudgets(b); }
+const KEY_MONTHLY_BUDGETS='vic2_monthly_budgets';
+function loadMonthlyBudgets(){ return load(KEY_MONTHLY_BUDGETS,{}); }
+function saveMonthlyBudgets(o){ save(KEY_MONTHLY_BUDGETS,o); }
+function loadMonthBudget(ym){ return loadMonthlyBudgets()[ym]||{}; }
+function saveMonthBudgetItem(ym,cat,val){
+  const all=loadMonthlyBudgets();
+  if(!all[ym]) all[ym]={};
+  const n=parseFloat(val);
+  if(!isNaN(n)&&n!==0) all[ym][cat]=n; else delete all[ym][cat];
+  if(!Object.keys(all[ym]).length) delete all[ym];
+  saveMonthlyBudgets(all);
+}
 
 function genId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 
@@ -888,9 +973,17 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderAllSettingsEditors();
   initBackToTopBtns();
   if('serviceWorker' in navigator){
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      // 偵測正在等待安裝的新 SW → 顯示更新橫幅
+      const showBanner=()=>{ if(reg.waiting) document.getElementById('update-banner').classList.add('show'); };
+      showBanner();
+      reg.addEventListener('updatefound',()=>{
+        reg.installing.addEventListener('statechange',()=>{ if(reg.waiting) showBanner(); });
+      });
+    }).catch(()=>{});
     navigator.serviceWorker.addEventListener('controllerchange',()=>window.location.reload());
   }
+  checkChangelog();
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='visible') document.getElementById('f-date').value=localDateStr();
   });
@@ -1295,23 +1388,59 @@ function setRepView(v, btn){
   renderFinReport();
 }
 
+function copyLastMonthBudget(){
+  let prevYear=reportYear, prevMonth=reportMonth-1;
+  if(prevMonth===0){ prevMonth=12; prevYear--; }
+  const prevYm=`${prevYear}-${String(prevMonth).padStart(2,'0')}`;
+  const curYm=`${reportYear}-${String(reportMonth).padStart(2,'0')}`;
+  const prevB=loadMonthBudget(prevYm);
+  if(!Object.keys(prevB).length){ showToast('上個月尚無預估資料'); return; }
+  const all=loadMonthlyBudgets();
+  all[curYm]={...prevB};
+  saveMonthlyBudgets(all);
+  renderFinReport();
+  showToast('✅ 已帶入上月預估，可自行修改');
+}
+
 function renderFinReport(){
   document.getElementById('rep-year-label').textContent=`${reportYear} 年`;
   if(repView==='qm'){ renderQMReport(); return; }
   const data=loadRecords();
-  const pfx=reportMonth===0?`${reportYear}-`:`${reportYear}-${String(reportMonth).padStart(2,'0')}`;
-  const mults=reportMonth===0?12:1;
+  const isAnnual=reportMonth===0;
+  document.getElementById('rep-copy-btn-wrap').style.display=isAnnual?'none':'block';
+  const pfx=isAnnual?`${reportYear}-`:`${reportYear}-${String(reportMonth).padStart(2,'0')}`;
   const rec=data.filter(r=>r.date.startsWith(pfx));
-  const budgets=loadBudgets(); const fixed=loadFixed(); const loans=loadLoans();
+  const fixed=loadFixed(); const loans=loadLoans();
   const cats=loadCats(); const incCats=loadIncome();
 
+  // 每月獨立預算：單月直接讀，年度則加總 12 個月
+  const getMonthBudget=ym=>loadMonthBudget(ym);
+  const annualBudget=(()=>{
+    const acc={};
+    for(let m=1;m<=12;m++){
+      const ym=`${reportYear}-${String(m).padStart(2,'0')}`;
+      Object.entries(getMonthBudget(ym)).forEach(([k,v])=>{ acc[k]=(acc[k]||0)+v; });
+    }
+    return acc;
+  })();
+  const moB=isAnnual?annualBudget:getMonthBudget(pfx);
+  const getB=cat=>moB[cat]||0;
+
   const fmtB=n=>n?fmt(Math.abs(n)):'';
-  const fmtA=n=>n?fmt(n):'';
   const nc=n=>n===0?'':n>0?`<span class="clr-income">${fmt(n)}</span>`:`<span class="clr-expense">${fmt(n)}</span>`;
   const rate=(a,b)=>b?Math.round(Math.abs(a)/Math.abs(b)*100)+'%':'−';
-  const row=(label,b,a,cls='')=>{
+
+  // 有 cat 且為單月時，預估欄顯示可編輯輸入框
+  const budgetCell=(b,cat)=>{
+    if(!isAnnual&&cat!=null)
+      return `<td><input type="number" class="rep-budget-input" value="${b||''}" placeholder="−" step="1"
+        onblur="saveMonthBudgetItem('${pfx}','${cat.replace(/'/g,"\\'")}',this.value);renderFinReport()"
+        onkeydown="if(event.key==='Enter')this.blur()"></td>`;
+    return `<td>${fmtB(b)}</td>`;
+  };
+  const row=(label,b,a,cat,cls='')=>{
     const diff=b||a?a-b:null;
-    return `<tr class="${cls}"><td>${label}</td><td>${fmtB(b)}</td><td>${nc(a)}</td><td>${diff!==null?nc(diff):''}</td><td>${b&&a?rate(a,b):'−'}</td></tr>`;
+    return `<tr class="${cls}"><td>${label}</td>${budgetCell(b,cat)}<td>${nc(a)}</td><td>${diff!==null?nc(diff):''}</td><td>${b&&a?rate(a,b):'−'}</td></tr>`;
   };
 
   let html='';
@@ -1320,53 +1449,54 @@ function renderFinReport(){
   let incB=0, incA=0;
   html+=`<tr class="rep-grp"><td colspan="5">收入</td></tr>`;
   incCats.forEach(cat=>{
-    const b=(budgets[cat]||0)*mults;
+    const b=getB(cat);
     const a=rec.filter(r=>r.type==='收入'&&r.main===cat).reduce((s,r)=>s+r.amount,0);
     incB+=b; incA+=a;
-    html+=row(cat,b,a);
+    html+=row(cat,b,a,cat);
   });
-  html+=row('收入合計',incB,incA,'rep-tot');
+  html+=row('收入合計',incB,incA,null,'rep-tot');
 
   // ── 成本 ──
   const costMains=[...new Set(data.filter(r=>r.type==='成本'&&r.main).map(r=>r.main))];
   let costB=0, costA=0;
   html+=`<tr class="rep-grp"><td colspan="5">成本</td></tr>`;
   costMains.forEach(cat=>{
-    const b=(budgets[cat]||0)*mults;
+    const b=getB(cat);
     const a=rec.filter(r=>r.type==='成本'&&r.main===cat).reduce((s,r)=>s+r.amount,0);
     costB+=b; costA+=a;
-    html+=row(cat,b,a);
+    html+=row(cat,b,a,cat);
   });
   if(!costMains.length) html+=`<tr><td colspan="5" style="color:#9BA3AF;font-size:11px;padding:6px 8px;background:#F8FAFC">（無記錄）</td></tr>`;
-  html+=row('成本合計',costB,costA,'rep-tot');
+  html+=row('成本合計',costB,costA,null,'rep-tot');
 
   // ── 費用 ──
   let expB=0, expA=0;
   html+=`<tr class="rep-grp"><td colspan="5">費用</td></tr>`;
   Object.keys(cats).forEach(cat=>{
-    const b=(budgets[cat]||0)*mults;
+    const b=getB(cat);
     const a=rec.filter(r=>r.main===cat&&r.amount<0).reduce((s,r)=>s+r.amount,0);
     expB+=b; expA+=a;
-    html+=row(cat,b,a);
+    html+=row(cat,b,a,cat);
   });
   fixed.forEach(item=>{
-    const b=-(item.amount||0)*mults;
+    const key='fixed:'+item.name;
+    const b=getB(key);
     const a=rec.filter(r=>r.main==='固定支出'&&r.sub===item.name).reduce((s,r)=>s+r.amount,0);
     expB+=b; expA+=a;
-    html+=row(item.name,b,a);
+    html+=row(item.name,b,a,key);
   });
   if(loans.length){
     const loanA=rec.filter(r=>r.main==='貸款').reduce((s,r)=>s+r.amount,0);
-    const loanB=(budgets['貸款']||0)*mults;
+    const loanB=getB('loan');
     expB+=loanB; expA+=loanA;
-    html+=row('貸款',loanB,loanA);
+    html+=row('貸款',loanB,loanA,'loan');
   }
-  html+=row('費用合計',expB,expA,'rep-tot');
+  html+=row('費用合計',expB,expA,null,'rep-tot');
 
   // ── 淨利 ──
-  const netB=incB+expB; // incB positive, expB negative
+  const netB=incB+expB;
   const netA=incA+expA;
-  html+=row('淨利 = 收入 + 費用',netB,netA,'rep-net');
+  html+=row('淨利 = 收入 + 費用',netB,netA,null,'rep-net');
   const netRateB=incB?Math.round(netB/incB*100)+'%':'−';
   const netRateA=incA?Math.round(netA/incA*100)+'%':'−';
   html+=`<tr class="rep-net"><td>淨利率</td><td>${netRateB}</td><td>${netRateA}</td><td></td><td></td></tr>`;
@@ -1376,16 +1506,11 @@ function renderFinReport(){
 
 function renderQMReport(){
   const data=loadRecords();
-  const budgets=loadBudgets(); const fixed=loadFixed(); const loans=loadLoans();
+  const fixed=loadFixed();
   const floatCats=Object.keys(loadCats()); const incCats=loadIncome();
   const costMains=[...new Set(data.filter(r=>r.type==='成本'&&r.main).map(r=>r.main))];
 
-  // monthly budget for each group (same every month)
-  const incMoB=incCats.reduce((s,c)=>s+(budgets[c]||0),0);
-  const costMoB=costMains.reduce((s,c)=>s+(budgets[c]||0),0);
-  const expMoB=floatCats.reduce((s,c)=>s+(budgets[c]||0),0)+fixed.reduce((s,f)=>s-(f.amount||0),0)+(budgets['貸款']||0);
-  const netMoB=incMoB+costMoB+expMoB;
-
+  // 每個月的實際數字
   const getA=pfx=>{
     const rec=data.filter(r=>r.date.startsWith(pfx));
     const inc=rec.filter(r=>r.type==='收入').reduce((s,r)=>s+r.amount,0);
@@ -1394,7 +1519,19 @@ function renderQMReport(){
     return {inc,cost,exp,net:inc+cost+exp};
   };
 
+  // 每個月的預算（各自獨立）
+  const getMoB=ym=>{
+    const moB=loadMonthBudget(ym);
+    const inc=incCats.reduce((s,c)=>s+(moB[c]||0),0);
+    const cost=costMains.reduce((s,c)=>s+(moB[c]||0),0);
+    const exp=floatCats.reduce((s,c)=>s+(moB[c]||0),0)
+      +fixed.reduce((s,f)=>s+(moB['fixed:'+f.name]||0),0)
+      +(moB['loan']||0);
+    return {inc,cost,exp,net:inc+cost+exp};
+  };
+
   const months=Array.from({length:12},(_,i)=>getA(`${reportYear}-${String(i+1).padStart(2,'0')}`));
+  const budgets=Array.from({length:12},(_,i)=>getMoB(`${reportYear}-${String(i+1).padStart(2,'0')}`));
 
   const nc=n=>n===0?'':n>0?`<span class="clr-income">${fmt(n)}</span>`:`<span class="clr-expense">${fmt(n)}</span>`;
   const pct=(a,b)=>b&&a?Math.round(Math.abs(a)/Math.abs(b)*100)+'%':'−';
@@ -1405,24 +1542,31 @@ function renderQMReport(){
     return `<td>${b?fmt(Math.abs(b)):''}</td><td>${nc(a)}</td><td>${diff!==null?nc(diff):''}</td><td>${pct(a,b)}</td><td>${isTotal?'':prevA!==null?moq(a,prevA):'−'}</td>`;
   };
 
-  const mkRow=(label,bArr,aObj,prevAObj,cls,isTotal=false)=>{
+  const mkRow=(label,bObj,aObj,prevAObj,cls,isTotal=false)=>{
     const vals=[
-      groupCells(bArr[0],aObj.inc,prevAObj?prevAObj.inc:null,isTotal),
-      groupCells(bArr[1],aObj.cost,prevAObj?prevAObj.cost:null,isTotal),
-      groupCells(bArr[2],aObj.exp,prevAObj?prevAObj.exp:null,isTotal),
-      groupCells(bArr[3],aObj.net,prevAObj?prevAObj.net:null,isTotal),
+      groupCells(bObj.inc,aObj.inc,prevAObj?prevAObj.inc:null,isTotal),
+      groupCells(bObj.cost,aObj.cost,prevAObj?prevAObj.cost:null,isTotal),
+      groupCells(bObj.exp,aObj.exp,prevAObj?prevAObj.exp:null,isTotal),
+      groupCells(bObj.net,aObj.net,prevAObj?prevAObj.net:null,isTotal),
     ].join('');
     return `<tr class="${cls}"><td>${label}</td>${vals}</tr>`;
   };
+
+  const sumB=idxs=>({
+    inc:idxs.reduce((s,i)=>s+budgets[i].inc,0),
+    cost:0,
+    exp:idxs.reduce((s,i)=>s+budgets[i].exp,0),
+    net:idxs.reduce((s,i)=>s+budgets[i].net,0),
+  });
 
   let html=''; let prevQA=null;
   const quarters=[[0,1,2],[3,4,5],[6,7,8],[9,10,11]];
   const qNames=['Q1','Q2','Q3','Q4'];
 
   quarters.forEach((idxs,qi)=>{
-    idxs.forEach((mi,pos)=>{
+    idxs.forEach(mi=>{
       const prevA=mi===0?null:months[mi-1];
-      html+=mkRow(`${mi+1}月`,[incMoB,costMoB,expMoB,netMoB],months[mi],prevA,'');
+      html+=mkRow(`${mi+1}月`,budgets[mi],months[mi],prevA,'');
     });
     const qA={
       inc:idxs.reduce((s,i)=>s+months[i].inc,0),
@@ -1430,7 +1574,7 @@ function renderQMReport(){
       exp:idxs.reduce((s,i)=>s+months[i].exp,0),
       net:idxs.reduce((s,i)=>s+months[i].net,0)
     };
-    html+=mkRow(qNames[qi],[incMoB*3,costMoB*3,expMoB*3,netMoB*3],qA,prevQA,'qm-q');
+    html+=mkRow(qNames[qi],sumB(idxs),qA,prevQA,'qm-q');
     prevQA=qA;
   });
 
@@ -1440,7 +1584,7 @@ function renderQMReport(){
     exp:months.reduce((s,m)=>s+m.exp,0),
     net:months.reduce((s,m)=>s+m.net,0)
   };
-  html+=mkRow('合計',[incMoB*12,costMoB*12,expMoB*12,netMoB*12],totalA,null,'qm-total',true);
+  html+=mkRow('合計',sumB([0,1,2,3,4,5,6,7,8,9,10,11]),totalA,null,'qm-total',true);
 
   document.getElementById('qm-tbody').innerHTML=html;
 }
@@ -1514,6 +1658,7 @@ function renderStats(){
   renderIncomeSection(data, prefix);
   renderEWalletSection(data, prefix);
   renderFloatSection(data, prefix);
+  renderFixedSection(data, prefix);
   renderCCSection(data, prefix);
   renderBankSection(data, prefix);
   renderFinPlanSection(data, prefix);
@@ -1683,14 +1828,41 @@ function renderEWalletSection(data, prefix){
   document.getElementById('ewallet-table-body').innerHTML=rows+`<tr class="total-row"><td>電子錢包合計</td><td>${tFlow?nc(tFlow):''}</td><td></td></tr>`;
 }
 
+function renderFixedSection(data, prefix){
+  const fixed=loadFixed();
+  let total=0;
+  const rows=fixed.map(item=>{
+    const rec=data.filter(r=>r.date.startsWith(prefix)&&r.main==='固定支出'&&r.sub===item.name);
+    const amt=rec.length?rec.reduce((s,r)=>s+r.amount,0):-(item.amount||0);
+    const lastRec=rec.sort((a,b)=>b.date.localeCompare(a.date))[0];
+    const dayDisp=lastRec
+      ?lastRec.date.slice(5).replace('-','/')
+      :(item.day?`${prefix.slice(5)}/${String(item.day).padStart(2,'0')}`:'');
+    const method=lastRec&&lastRec.method?lastRec.method:(item.method||'');
+    if(amt) total+=amt;
+    return `<tr>
+      <td>${item.name}</td>
+      <td>${method}</td>
+      <td style="text-align:right">${amt?`<span class="clr-expense">${fmt(amt)}</span>`:''}</td>
+      <td style="text-align:right">${dayDisp}</td>
+    </tr>`;
+  }).join('');
+  const totalEl=total?`<span class="clr-expense">${fmt(total)}</span>`:'';
+  document.getElementById('fixed-table-body').innerHTML=rows+`<tr class="total-row">
+    <td>固定支出合計</td><td></td>
+    <td style="text-align:right">${totalEl}</td>
+    <td></td>
+  </tr>`;
+}
+
 function renderFloatSection(data, prefix){
-  const cats=loadCats(); const budgets=loadBudgets();
+  const cats=loadCats(); const moB=loadMonthBudget(prefix);
   const moRecs=data.filter(r=>r.date.startsWith(prefix)&&r.amount<0);
   let total=0, totalRem=0, hasRem=false;
   const nc=n=>n>0?`<span class="clr-income">${fmt(n)}</span>`:n<0?`<span class="clr-expense">${fmt(n)}</span>`:'0';
   const rows=Object.keys(cats).map(cat=>{
     const amt=moRecs.filter(r=>r.main===cat).reduce((s,r)=>s+r.amount,0);
-    const budget=budgets[cat]??null;
+    const budget=moB[cat]??null;
     const rem=budget!==null?amt-budget:(amt!==0?amt:null);
     if(amt) total+=amt;
     if(rem!==null){ totalRem+=rem; hasRem=true; }
@@ -1762,7 +1934,6 @@ function renderAllSettingsEditors(){
   renderBankEditor('editor-ewallet', mg['電子錢包']||[], '電子錢包');
   renderBalanceListEditor('editor-cash', mg['現金']||[], '現金', '期初');
   renderFloatCatsEditor();
-  renderBudgetEditor();
   renderFixedEditor();
   renderSimpleListEditor('editor-income', loadIncome(), '收入類別', saveIncome);
   renderLoansEditor();
@@ -2050,7 +2221,7 @@ function delLoan(id){
 
 // ─── Backup / restore ──────────────────────────────────────────────────────
 function exportJSON(){
-  const payload={records:loadRecords(),methods_grouped:loadMG(),categories:loadCats(),income_cats:loadIncome(),fixed:loadFixed(),loans:loadLoans(),loan_prin:loadLoanPrin(),acct_bal:loadAcctBal(),acct_avail:loadAcctAvail(),cc_due:loadCCDue(),cc_limits:loadCCLimits(),fin_plan:loadFinPlan(),budgets:loadBudgets()};
+  const payload={records:loadRecords(),methods_grouped:loadMG(),categories:loadCats(),income_cats:loadIncome(),fixed:loadFixed(),loans:loadLoans(),loan_prin:loadLoanPrin(),acct_bal:loadAcctBal(),acct_avail:loadAcctAvail(),cc_due:loadCCDue(),cc_limits:loadCCLimits(),fin_plan:loadFinPlan(),monthly_budgets:loadMonthlyBudgets()};
   const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a'); a.href=url; a.download=`vic2_backup_${new Date().toISOString().slice(0,10)}.json`;
@@ -2080,7 +2251,7 @@ function handleJSONImport(e){
         if(d.cc_due&&typeof d.cc_due==='object') saveCCDue(d.cc_due);
         if(Array.isArray(d.cc_limits)) saveCCLimits(d.cc_limits);
         if(Array.isArray(d.fin_plan)) saveFinPlan(d.fin_plan);
-        if(d.budgets&&typeof d.budgets==='object') saveBudgets(d.budgets);
+        if(d.monthly_budgets&&typeof d.monthly_budgets==='object') saveMonthlyBudgets(d.monthly_budgets);
         showToast('✅ 備份已還原');
       }
       renderRecords(); updateHeaderSub(); renderAllSettingsEditors();
@@ -2155,6 +2326,145 @@ function setScrollTo(id){ scrollToSection(id); }
 function esc(s){ return s.replace(/'/g,"\\'"); }
 let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
+
+// ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
+const APP_VERSION='1.0';
+const CHANGELOG=[
+  {version:'1.0',date:'2026-05-02',items:[
+    '統計頁新增固定支出明細表（方式、金額、支出日自動抓取）',
+    '報表頁預估數改為每月可獨立輸入，不再共用同一份預算',
+    '新增「帶入上月預估」按鈕，一鍵複製上月預算',
+    '固定支出、貸款、成本也納入每月可編輯預估',
+    '設定頁新增「📚 財務語言」詞典，可自行新增與編輯',
+    '設定頁「資料備份」改名為「🛠️ 維護與工具」',
+  ]},
+];
+
+function checkChangelog(){
+  const seen=localStorage.getItem('vic2_seen_version');
+  if(seen===APP_VERSION) return;
+  const entry=CHANGELOG.find(c=>c.version===APP_VERSION);
+  if(!entry) return;
+  document.getElementById('changelog-version-label').textContent=`v${entry.version} · ${entry.date}`;
+  document.getElementById('changelog-list').innerHTML=entry.items.map(item=>`
+    <li style="display:flex;gap:8px;padding:9px 0;border-bottom:1px solid #F3F4F6;font-size:14px;color:#374151;align-items:flex-start">
+      <span style="color:#3B5BDB;font-size:16px;flex-shrink:0;line-height:1.4">•</span>
+      <span style="line-height:1.5">${item}</span>
+    </li>`).join('');
+  document.getElementById('changelog-overlay').classList.add('open');
+}
+
+function dismissChangelog(){
+  localStorage.setItem('vic2_seen_version',APP_VERSION);
+  document.getElementById('changelog-overlay').classList.remove('open');
+}
+
+function applyUpdate(){
+  navigator.serviceWorker.getRegistration().then(reg=>{
+    if(reg&&reg.waiting) reg.waiting.postMessage('SKIP_WAITING');
+    else window.location.reload();
+  });
+}
+
+// ─── 財務語言 Glossary ────────────────────────────────────────────────────────
+const DEFAULT_GLOSSARY=[
+  {id:'gl01',term:'3表',def:'現金流量表、損益表、資產負債表'},
+  {id:'gl02',term:'現金流量表',def:'現金流量表 (Cash Flow Statement)\n\n定義：記錄企業在一段特定時間內的現金流入和流出情況。\n\n主要部分：\n• 營運活動現金流 (Operating Activities)：來自主要業務活動的現金流，如收取的銷售收入和支付的原材料成本。\n• 投資活動現金流 (Investing Activities)：來自公司的投資活動，如購買或出售固定資產。\n• 融資活動現金流 (Financing Activities)：來自公司的融資活動，如發行或回購股票、舉債。\n\n重點：強調實際的現金交易，不論這些交易是否產生利潤或損失。'},
+  {id:'gl03',term:'損益表',def:'損益表 (Income Statement / Profit and Loss Statement)\n\n定義：提供企業在一段特定時間內的收入、成本和利潤狀況總覽。\n\n主要部分：\n• 收入 (Revenues)：從銷售商品或提供服務中獲得的收入。\n• 成本 (Costs/Expenses)：企業為產生收入所需支付的金額，如員工薪資、租金、原材料成本等。\n• 利潤 (Profit)：收入減去成本之後的金額，包括毛利、營業利潤、稅前利潤和淨利潤。\n\n重點：基於應計制會計，記錄當期發生的交易，而不僅是實際現金交易。'},
+  {id:'gl04',term:'資產負債表',def:'資產負債表由「資產、負債及股東權益」3 大部分組成，記載公司當期所擁有的所有資產 (Asset)、負債 (Liability) 與股東權益 (Equity)。\n\n會計恆等式：資產 = 負債 + 權益\n\n左邊為資產、右邊為負債 + 股東權益，合計即為公司完整的財務狀況。'},
+  {id:'gl05',term:'增速',def:'DoD（Day over Day）— 日成長率\nMoM（Month over Month）— 月成長率\nQoQ（Quarter over Quarter）— 季成長率\nYoY（Year over Year）— 年成長率'},
+  {id:'gl06',term:'毛利率',def:'公式：（營業收入 − 營業成本）÷ 營業收入 × 100%\n\n反映企業在扣除直接生產成本後的獲利能力。毛利率越高，代表產品或服務的附加價值越高。'},
+  {id:'gl07',term:'淨利率',def:'公式：（毛利 − 營業費用 − 稅額）÷ 營收\n\n反映企業最終的獲利能力，即每一元營收最終留下多少淨利潤。'},
+];
+const KEY_GLOSSARY='vic2_glossary';
+function loadGlossary(){ return load(KEY_GLOSSARY,DEFAULT_GLOSSARY); }
+function saveGlossary(a){ save(KEY_GLOSSARY,a); }
+
+function openGlossary(){
+  document.getElementById('glossary-overlay').classList.add('open');
+  document.getElementById('glossary-search').value='';
+  renderGlossaryList();
+}
+function closeGlossary(){
+  document.getElementById('glossary-overlay').classList.remove('open');
+}
+
+function escHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function renderGlossaryList(){
+  const q=(document.getElementById('glossary-search').value||'').toLowerCase();
+  const list=loadGlossary().filter(g=>!q||g.term.toLowerCase().includes(q)||g.def.toLowerCase().includes(q));
+  const el=document.getElementById('glossary-list');
+  if(!list.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">📖</div><div class="empty-title">找不到相關詞彙</div></div>'; return; }
+  el.innerHTML=list.map(g=>`
+    <div class="glossary-card" id="gc-${g.id}">
+      <div class="glossary-term">
+        <span>${escHtml(g.term)}</span>
+        <div class="glossary-actions">
+          <button class="glossary-edit-btn" onclick="editGlossaryEntry('${g.id}')">✎ 編輯</button>
+          <button class="glossary-del-btn" onclick="delGlossaryEntry('${g.id}')">×</button>
+        </div>
+      </div>
+      <div class="glossary-def collapsed" id="gd-${g.id}" onclick="toggleGlossaryDef('${g.id}')">${escHtml(g.def)}</div>
+      <span class="glossary-toggle" id="gt-${g.id}" onclick="toggleGlossaryDef('${g.id}')">展開 ▼</span>
+    </div>`).join('');
+}
+
+function toggleGlossaryDef(id){
+  const def=document.getElementById('gd-'+id);
+  const toggle=document.getElementById('gt-'+id);
+  if(!def) return;
+  const isCollapsed=def.classList.toggle('collapsed');
+  if(toggle) toggle.textContent=isCollapsed?'展開 ▼':'收合 ▲';
+}
+
+function editGlossaryEntry(id){
+  const card=document.getElementById('gc-'+id);
+  const item=loadGlossary().find(g=>g.id===id);
+  if(!item||!card) return;
+  card.innerHTML=`
+    <div style="margin-bottom:8px">
+      <label style="font-size:11px;color:#6B7280;font-weight:600;letter-spacing:.3px;display:block;margin-bottom:4px">詞彙</label>
+      <input type="text" class="form-control" id="ge-term-${id}" value="${escHtml(item.term)}" style="font-size:14px">
+    </div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;color:#6B7280;font-weight:600;letter-spacing:.3px;display:block;margin-bottom:4px">說明</label>
+      <textarea class="form-control" id="ge-def-${id}" rows="7" style="font-size:13px;line-height:1.6;resize:vertical">${escHtml(item.def)}</textarea>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" style="flex:1;padding:10px" onclick="saveGlossaryEntry('${id}')">✅ 儲存</button>
+      <button class="btn" style="flex:1;padding:10px;background:#F3F4F6;color:#374151" onclick="renderGlossaryList()">取消</button>
+    </div>`;
+}
+
+function saveGlossaryEntry(id){
+  const termEl=document.getElementById('ge-term-'+id);
+  const defEl=document.getElementById('ge-def-'+id);
+  if(!termEl||!defEl) return;
+  const term=termEl.value.trim(); const def=defEl.value.trim();
+  if(!term){ showToast('詞彙名稱不能空白'); return; }
+  const glossary=loadGlossary();
+  const item=glossary.find(g=>g.id===id);
+  if(!item) return;
+  item.term=term; item.def=def;
+  saveGlossary(glossary); renderGlossaryList(); showToast('✅ 已儲存');
+}
+
+function delGlossaryEntry(id){
+  if(!confirm('確定刪除這個詞彙？')) return;
+  saveGlossary(loadGlossary().filter(g=>g.id!==id));
+  renderGlossaryList(); showToast('已刪除');
+}
+
+function showAddGlossary(){
+  const id=genId();
+  const glossary=loadGlossary();
+  glossary.push({id,term:'',def:''});
+  saveGlossary(glossary);
+  renderGlossaryList();
+  const body=document.querySelector('.glossary-body');
+  setTimeout(()=>{ body.scrollTop=body.scrollHeight; editGlossaryEntry(id); },60);
+}
 </script>
 </body>
 </html>
