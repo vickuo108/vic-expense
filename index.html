@@ -237,9 +237,45 @@ input[type=number]{-moz-appearance:textfield}
 .glossary-edit-btn{background:#EEF2FF;border:none;border-radius:6px;padding:4px 9px;font-size:12px;color:#3B5BDB;cursor:pointer;white-space:nowrap}
 .glossary-del-btn{background:#FFF1F2;border:none;border-radius:6px;padding:4px 8px;font-size:12px;color:#EF4444;cursor:pointer}
 .glossary-toggle{font-size:10px;color:#9BA3AF;cursor:pointer;margin-top:4px;display:block;text-align:right}
+/* ── 登入畫面 ── */
+#login-overlay{position:fixed;inset:0;background:#1A1A2E;z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;transition:opacity .3s}
+.login-card{background:#fff;border-radius:20px;padding:32px 24px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.login-logo{font-size:40px;text-align:center;margin-bottom:6px}
+.login-title{font-size:20px;font-weight:700;text-align:center;color:#1A1A2E;margin-bottom:4px}
+.login-sub{font-size:13px;color:#9BA3AF;text-align:center;margin-bottom:24px}
+.login-input{width:100%;padding:12px 14px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:15px;box-sizing:border-box;margin-bottom:12px;outline:none;-webkit-appearance:none}
+.login-input:focus{border-color:#3B5BDB}
+.login-btn{width:100%;padding:14px;background:#3B5BDB;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:12px}
+.login-btn:disabled{opacity:.6;cursor:default}
+.login-switch{text-align:center;font-size:13px;color:#9BA3AF}
+.login-switch b{color:#3B5BDB;cursor:pointer;font-weight:600}
+.login-error{color:#EF4444;font-size:13px;text-align:center;margin-top:8px;min-height:18px}
+/* ── 同步指示點 ── */
+#sync-dot{width:8px;height:8px;border-radius:50%;background:#10B981;flex-shrink:0;margin-right:4px;display:none}
+#sync-dot.ok{display:block;background:#10B981}
+#sync-dot.syncing{display:block;background:#F59E0B;animation:sdpulse .8s infinite}
+#sync-dot.error{display:block;background:#EF4444}
+@keyframes sdpulse{0%,100%{opacity:1}50%{opacity:.2}}
 </style>
+<!-- Firebase compat SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
+<!-- 登入畫面 -->
+<div id="login-overlay">
+  <div class="login-card">
+    <div class="login-logo">💰</div>
+    <div class="login-title">Vic 記帳本</div>
+    <div class="login-sub" id="login-mode-sub">登入以同步資料</div>
+    <input class="login-input" id="login-email" type="email" placeholder="Email" autocomplete="email" inputmode="email">
+    <input class="login-input" id="login-password" type="password" placeholder="密碼" autocomplete="current-password">
+    <button class="login-btn" id="login-submit-btn" onclick="doAuthSubmit()">登入</button>
+    <div class="login-switch"><span id="login-switch-text">還沒有帳號？</span><b onclick="toggleAuthMode()">註冊</b></div>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
 <!-- 更新橫幅 -->
 <div class="update-banner" id="update-banner">
   <div>
@@ -271,7 +307,10 @@ input[type=number]{-moz-appearance:textfield}
       <div class="header-title" id="app-title" contenteditable="true" spellcheck="false" onblur="saveAppTitle()" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur()}">Vic 記帳本 💰</div>
       <div class="header-sub" id="header-sub">載入中...</div>
     </div>
-    <div style="font-size:13px;opacity:.8" id="header-date"></div>
+    <div style="display:flex;align-items:center">
+      <div id="sync-dot" title="同步狀態"></div>
+      <div style="font-size:13px;opacity:.8" id="header-date"></div>
+    </div>
   </div>
 
   <div class="content" id="main-content">
@@ -553,6 +592,7 @@ input[type=number]{-moz-appearance:textfield}
         <button class="stats-qnav-btn" onclick="setScrollTo('ss-loan')">🏦 貸款</button>
         <button class="stats-qnav-btn" onclick="setScrollTo('ss-cclimit')">💳 信用卡額度</button>
         <button class="stats-qnav-btn" onclick="setScrollTo('ss-backup')">🛠️ 維護與工具</button>
+        <button class="stats-qnav-btn" onclick="setScrollTo('ss-account')">👤 帳號</button>
       </div>
 
       <div id="ss-bank" class="settings-section-title">🏦 銀行帳戶</div>
@@ -618,6 +658,15 @@ input[type=number]{-moz-appearance:textfield}
         <div class="s-text"><div class="s-title">財務語言</div><div class="s-desc">常見財務名詞解釋，可自行新增與編輯</div></div>
         <span class="s-arrow">›</span>
       </button>
+
+      <div id="ss-account" class="settings-section-title">👤 帳號</div>
+      <div class="card" style="padding:14px;margin-bottom:8px">
+        <div style="font-size:13px;color:#374151;margin-bottom:12px">已登入：<span id="acct-email" style="font-weight:600;color:#3B5BDB"></span></div>
+        <div style="display:flex;gap:8px">
+          <button onclick="manualSync()" style="flex:1;padding:10px;background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:8px;font-size:13px;color:#1D4ED8;cursor:pointer;font-weight:600">☁️ 立即同步</button>
+          <button onclick="doLogout()" style="flex:1;padding:10px;background:#FFF1F2;border:1.5px solid #FECDD3;border-radius:8px;font-size:13px;color:#EF4444;cursor:pointer;font-weight:600">登出</button>
+        </div>
+      </div>
 
       <div style="text-align:center;font-size:11px;color:#D1D5DB;margin-top:20px;padding-bottom:8px">Vic 記帳本 v1.0 · 2026</div>
     </div>
@@ -888,7 +937,7 @@ const DEFAULT_FIN_PLAN = [
 ];
 
 const load = (key, def) => { try{ const v=JSON.parse(localStorage.getItem(key)); return v!=null?v:clone(def); }catch{ return clone(def); } };
-const save = (key, v) => localStorage.setItem(key, JSON.stringify(v));
+const save = (key, v) => { localStorage.setItem(key, JSON.stringify(v)); if(!_isSyncing) scheduleSyncToCloud(); };
 const clone = v => JSON.parse(JSON.stringify(v));
 
 function loadRecords(){ return load(KEY_RECORDS, []); }
@@ -1015,20 +1064,25 @@ document.addEventListener('DOMContentLoaded',()=>{
   renderStats();
   renderAllSettingsEditors();
   initBackToTopBtns();
+  let _swReg=null;
   if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').then(reg=>{
-      // 偵測正在等待安裝的新 SW → 顯示更新橫幅
+      _swReg=reg;
       const showBanner=()=>{ if(reg.waiting) document.getElementById('update-banner').classList.add('show'); };
       showBanner();
       reg.addEventListener('updatefound',()=>{
         reg.installing.addEventListener('statechange',()=>{ if(reg.waiting) showBanner(); });
       });
+      reg.update(); // 開啟時主動檢查是否有新版（iOS PWA 必須）
     }).catch(()=>{});
     navigator.serviceWorker.addEventListener('controllerchange',()=>window.location.reload());
   }
   checkChangelog();
   document.addEventListener('visibilitychange',()=>{
-    if(document.visibilityState==='visible') document.getElementById('f-date').value=localDateStr();
+    if(document.visibilityState==='visible'){
+      document.getElementById('f-date').value=localDateStr();
+      if(_swReg) _swReg.update(); // 從背景回來時也再檢查一次
+    }
   });
 });
 
@@ -2570,8 +2624,16 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='1.4';
+const APP_VERSION='1.5';
 const CHANGELOG=[
+  {version:'1.5',date:'2026-05-03',items:[
+    '新增帳號登入功能（Email + 密碼），資料自動雲端同步',
+    '每次新增、編輯、刪除記錄後 2 秒內自動上傳至雲端',
+    '開啟 App 或從背景回來時自動下載最新資料',
+    'Header 小圓點顯示同步狀態（🟡同步中 / 🟢已同步 / 🔴錯誤）',
+    '設定頁帳號區塊移至最下方，可手動同步及登出',
+    '修正 iOS 主畫面 PWA 模式不跳出更新提醒的問題',
+  ]},
   {version:'1.4',date:'2026-05-03',items:[
     '統計固定支出不再顯示預設數值，僅顯示當月實際記錄',
     '財務規劃統計支援付款方式為「無」、主類別為帳戶名的收入記錄',
@@ -2740,6 +2802,119 @@ function showAddGlossary(){
   const body=document.querySelector('.glossary-body');
   setTimeout(()=>{ body.scrollTop=body.scrollHeight; editGlossaryEntry(id); },60);
 }
+
+// ─── Firebase 同步 ────────────────────────────────────────────────────────────
+const _fbCfg={apiKey:"AIzaSyB1b6oTHXkYj1TfZJvwKqfD0Lcim49Bhjk",authDomain:"expense-c7e01.firebaseapp.com",projectId:"expense-c7e01",storageBucket:"expense-c7e01.firebasestorage.app",messagingSenderId:"435599371028",appId:"1:435599371028:web:76d55af7b63de277d03001"};
+firebase.initializeApp(_fbCfg);
+const _auth=firebase.auth();
+const _db=firebase.firestore();
+
+let _fbUser=null, _isSyncing=false, _syncTimer=null, _authMode='login';
+
+function setSyncDot(s){ const d=document.getElementById('sync-dot'); d.className=s; }
+
+function scheduleSyncToCloud(){
+  if(!_fbUser) return;
+  clearTimeout(_syncTimer);
+  setSyncDot('syncing');
+  _syncTimer=setTimeout(syncToCloud,2000);
+}
+
+async function syncToCloud(){
+  if(!_fbUser) return;
+  try{
+    const p={records:loadRecords(),methods_grouped:loadMG(),categories:loadCats(),income_cats:loadIncome(),fixed:loadFixed(),loans:loadLoans(),loan_prin:loadLoanPrin(),acct_bal:loadAcctBal(),acct_avail:loadAcctAvail(),cc_due:loadCCDue(),cc_limits:loadCCLimits(),fin_plan:loadFinPlan(),monthly_budgets:loadMonthlyBudgets()};
+    await _db.collection('users').doc(_fbUser.uid).collection('data').doc('main').set(p);
+    setSyncDot('ok');
+  } catch(e){ setSyncDot('error'); }
+}
+
+async function syncFromCloud(){
+  if(!_fbUser) return;
+  setSyncDot('syncing');
+  try{
+    const doc=await _db.collection('users').doc(_fbUser.uid).collection('data').doc('main').get();
+    if(doc.exists){
+      _isSyncing=true;
+      const d=doc.data();
+      if(Array.isArray(d.records)) saveRecords(d.records);
+      if(d.methods_grouped) saveMG(d.methods_grouped);
+      if(d.categories) saveCats(d.categories);
+      if(Array.isArray(d.income_cats)) saveIncome(d.income_cats);
+      if(Array.isArray(d.fixed)) saveFixed(d.fixed);
+      if(Array.isArray(d.loans)) saveLoans(d.loans);
+      if(d.loan_prin) saveLoanPrin(d.loan_prin);
+      if(d.acct_bal) saveAcctBal(d.acct_bal);
+      if(d.acct_avail) saveAcctAvail(d.acct_avail);
+      if(d.cc_due) saveCCDue(d.cc_due);
+      if(Array.isArray(d.cc_limits)) saveCCLimits(d.cc_limits);
+      if(Array.isArray(d.fin_plan)) saveFinPlan(d.fin_plan);
+      if(d.monthly_budgets) saveMonthlyBudgets(d.monthly_budgets);
+      _isSyncing=false;
+      renderRecords(); renderStats(); renderAllSettingsEditors(); updateHeaderSub();
+      populateAddForm(); populateEditForm(); populateFilterDropdowns();
+    }
+    setSyncDot('ok');
+  } catch(e){ _isSyncing=false; setSyncDot('error'); }
+}
+
+async function manualSync(){
+  showToast('☁️ 同步中...'); await syncFromCloud(); await syncToCloud(); showToast('✅ 同步完成');
+}
+
+// Auth UI
+function toggleAuthMode(){
+  _authMode=_authMode==='login'?'register':'login';
+  document.getElementById('login-mode-sub').textContent=_authMode==='login'?'登入以同步資料':'建立新帳號';
+  document.getElementById('login-submit-btn').textContent=_authMode==='login'?'登入':'註冊';
+  document.getElementById('login-switch-text').textContent=_authMode==='login'?'還沒有帳號？':'已有帳號？';
+  document.getElementById('login-error').textContent='';
+}
+
+async function doAuthSubmit(){
+  const email=document.getElementById('login-email').value.trim();
+  const pw=document.getElementById('login-password').value;
+  const errEl=document.getElementById('login-error');
+  const btn=document.getElementById('login-submit-btn');
+  if(!email||!pw){ errEl.textContent='請填寫 Email 和密碼'; return; }
+  btn.disabled=true; errEl.textContent='';
+  try{
+    if(_authMode==='login') await _auth.signInWithEmailAndPassword(email,pw);
+    else await _auth.createUserWithEmailAndPassword(email,pw);
+  } catch(e){
+    const msg={
+      'auth/user-not-found':'找不到此帳號',
+      'auth/wrong-password':'密碼錯誤',
+      'auth/invalid-email':'Email 格式不正確',
+      'auth/email-already-in-use':'此 Email 已被註冊',
+      'auth/weak-password':'密碼至少需要 6 個字元',
+      'auth/invalid-credential':'帳號或密碼錯誤',
+    };
+    errEl.textContent=msg[e.code]||'登入失敗，請再試一次';
+    btn.disabled=false;
+  }
+}
+
+async function doLogout(){
+  if(!confirm('確定要登出？')) return;
+  await _auth.signOut();
+}
+
+// Auth state listener
+_auth.onAuthStateChanged(async user=>{
+  _fbUser=user;
+  if(user){
+    document.getElementById('acct-email').textContent=user.email;
+    const overlay=document.getElementById('login-overlay');
+    overlay.style.opacity='0'; setTimeout(()=>overlay.style.display='none',300);
+    await syncFromCloud();
+  } else {
+    const overlay=document.getElementById('login-overlay');
+    overlay.style.display='flex'; overlay.style.opacity='1';
+    document.getElementById('login-submit-btn').disabled=false;
+    setSyncDot('');
+  }
+});
 </script>
 </body>
 </html>
