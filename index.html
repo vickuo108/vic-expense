@@ -1677,7 +1677,7 @@ function renderFinReport(){
   html+=`<tr class="rep-grp"><td colspan="5">費用</td></tr>`;
   Object.keys(cats).forEach(cat=>{
     const b=getB(cat);
-    const a=rec.filter(r=>r.main===cat&&r.amount<0).reduce((s,r)=>s+r.amount,0);
+    const a=rec.filter(r=>r.main===cat).reduce((s,r)=>s+r.amount,0);
     expB+=b; expA+=a;
     html+=row(cat,b,a,cat);
   });
@@ -2077,7 +2077,7 @@ function renderFixedSection(data, prefix){
 
 function renderFloatSection(data, prefix){
   const cats=loadCats(); const moB=loadMonthBudget(prefix);
-  const moRecs=data.filter(r=>r.date.startsWith(prefix)&&r.amount<0);
+  const moRecs=data.filter(r=>r.date.startsWith(prefix));
   let total=0, totalRem=0, hasRem=false;
   const nc=n=>n>0?`<span class="clr-income">${fmt(n)}</span>`:n<0?`<span class="clr-expense">${fmt(n)}</span>`:'0';
   const rows=Object.keys(cats).map(cat=>{
@@ -2088,13 +2088,13 @@ function renderFloatSection(data, prefix){
     if(rem!==null){ totalRem+=rem; hasRem=true; }
     return `<tr>
       <td>${cat}</td>
-      <td style="text-align:right">${amt?`<span class="clr-expense">${fmt(amt)}</span>`:''}</td>
+      <td style="text-align:right">${amt?nc(amt):''}</td>
       <td style="text-align:right">${rem!==null?nc(rem):''}</td>
     </tr>`;
   }).join('');
   document.getElementById('float-table-body').innerHTML=rows+`<tr class="total-row">
     <td>浮動支出合計</td>
-    <td style="text-align:right"><span class="clr-expense">${fmt(total)}</span></td>
+    <td style="text-align:right">${nc(total)}</td>
     <td style="text-align:right">${hasRem?nc(totalRem):''}</td>
   </tr>`;
 }
@@ -2448,6 +2448,11 @@ function _dsTouchMove(e){
   if(!_ds?.active) return;
   e.preventDefault();
   const y=e.touches[0].clientY;
+  // 自動捲動：手指靠近螢幕上下邊緣時捲動頁面
+  const scroller=document.getElementById('main-content');
+  const ZONE=80, SPEED=8;
+  if(y<ZONE) scroller.scrollTop-=SPEED*(1-y/ZONE);
+  else if(y>window.innerHeight-ZONE) scroller.scrollTop+=SPEED*(1-(window.innerHeight-y)/ZONE);
   const sel=_ds.isSub?':scope>.sub-list-item[data-dkey]':':scope>.list-item-row[data-dkey]';
   for(const r of _ds.container.querySelectorAll(sel)){
     if(r===_ds.row) continue;
@@ -2483,6 +2488,8 @@ function _dsCommit(container, isSub){
   else if(s==='income'){ saveIncome(keys); renderAllSettingsEditors(); refreshFormDropdowns(); }
   else if(s==='floatmain'){ const cats=loadCats(); saveCats(Object.fromEntries(keys.map(k=>[k,cats[k]||[]]))); renderFloatCatsEditor(); refreshFormDropdowns(); }
   else if(g){ const mg=loadMG(); mg[g]=keys; saveMG(mg); renderAllSettingsEditors(); refreshFormDropdowns(); }
+  // 排序變更立即同步，不等 2 秒 debounce
+  if(_fbUser){ clearTimeout(_syncTimer); syncToCloud(); }
 }
 
 function renderLoansEditor(){
@@ -2627,8 +2634,14 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='1.7';
+const APP_VERSION='1.8';
 const CHANGELOG=[
+  {version:'1.8',date:'2026-05-04',items:[
+    '登入後記憶 Email，下次需重新登入時自動填入',
+    '設定頁拖曳排序完成後立即同步雲端，避免順序被舊資料覆蓋',
+    '設定頁拖曳時頁面自動捲動跟隨手指',
+    '浮動支出統計與報表現在同時計算正數與負數金額（正數視為退款）',
+  ]},
   {version:'1.7',date:'2026-05-03',items:[
     '付款方式下拉選單順序調整為：現金、信用卡、銀行帳戶、電子錢包、無',
   ]},
@@ -2819,6 +2832,7 @@ const _fbCfg={apiKey:"AIzaSyB1b6oTHXkYj1TfZJvwKqfD0Lcim49Bhjk",authDomain:"expen
 firebase.initializeApp(_fbCfg);
 const _auth=firebase.auth();
 const _db=firebase.firestore();
+_auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
 let _fbUser=null, _isSyncing=false, _syncTimer=null, _authMode='login';
 
@@ -2915,6 +2929,7 @@ async function doLogout(){
 _auth.onAuthStateChanged(async user=>{
   _fbUser=user;
   if(user){
+    localStorage.setItem('vic2_last_email', user.email);
     document.getElementById('acct-email').textContent=user.email;
     const overlay=document.getElementById('login-overlay');
     overlay.style.opacity='0'; setTimeout(()=>overlay.style.display='none',300);
@@ -2924,6 +2939,9 @@ _auth.onAuthStateChanged(async user=>{
     overlay.style.display='flex'; overlay.style.opacity='1';
     document.getElementById('login-submit-btn').disabled=false;
     setSyncDot('');
+    // 自動填入上次登入的 email
+    const lastEmail=localStorage.getItem('vic2_last_email');
+    if(lastEmail) document.getElementById('login-email').value=lastEmail;
   }
 });
 </script>
