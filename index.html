@@ -1205,7 +1205,11 @@ function populateFilterDropdowns(){
 }
 
 // ─── Tab ───────────────────────────────────────────────────────────────────
+const _tabScroll={};
 function switchTab(name, btn){
+  const content=document.getElementById('main-content');
+  const cur=document.querySelector('.panel.active');
+  if(cur) _tabScroll[cur.id.replace('panel-','')]=content.scrollTop;
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
   document.getElementById('panel-'+name).classList.add('active');
@@ -1216,6 +1220,7 @@ function switchTab(name, btn){
   if(name==='report') renderFinReport();
   if(name==='settings') renderAllSettingsEditors();
   updateHeaderSub();
+  requestAnimationFrame(()=>{ content.scrollTop=_tabScroll[name]||0; });
 }
 
 // ─── Add Form ──────────────────────────────────────────────────────────────
@@ -2637,8 +2642,12 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='1.10';
+const APP_VERSION='1.11';
 const CHANGELOG=[
+  {version:'1.11',date:'2026-05-04',items:[
+    '修正浮動支出順序每次同步後跑掉的問題（Firestore 不保留 key 順序，改用獨立陣列記錄）',
+    '切換分頁時保留各分頁的捲軸位置，不再跳回頂部',
+  ]},
   {version:'1.10',date:'2026-05-04',items:[
     '登入畫面標題跟著表頭名字同步更新',
   ]},
@@ -2859,7 +2868,8 @@ function scheduleSyncToCloud(){
 async function syncToCloud(){
   if(!_fbUser) return;
   try{
-    const p={records:loadRecords(),methods_grouped:loadMG(),categories:loadCats(),income_cats:loadIncome(),fixed:loadFixed(),loans:loadLoans(),loan_prin:loadLoanPrin(),acct_bal:loadAcctBal(),acct_avail:loadAcctAvail(),cc_due:loadCCDue(),cc_limits:loadCCLimits(),fin_plan:loadFinPlan(),monthly_budgets:loadMonthlyBudgets()};
+    const _cats=loadCats();
+    const p={records:loadRecords(),methods_grouped:loadMG(),categories:_cats,cats_order:Object.keys(_cats),income_cats:loadIncome(),fixed:loadFixed(),loans:loadLoans(),loan_prin:loadLoanPrin(),acct_bal:loadAcctBal(),acct_avail:loadAcctAvail(),cc_due:loadCCDue(),cc_limits:loadCCLimits(),fin_plan:loadFinPlan(),monthly_budgets:loadMonthlyBudgets()};
     await _db.collection('users').doc(_fbUser.uid).collection('data').doc('main').set(p);
     setSyncDot('ok');
   } catch(e){ setSyncDot('error'); }
@@ -2875,7 +2885,14 @@ async function syncFromCloud(){
       const d=doc.data();
       if(Array.isArray(d.records)) saveRecords(d.records);
       if(d.methods_grouped) saveMG(d.methods_grouped);
-      if(d.categories) saveCats(d.categories);
+      if(d.categories){
+        if(Array.isArray(d.cats_order)&&d.cats_order.length){
+          const ordered={};
+          d.cats_order.forEach(k=>{ if(d.categories[k]!==undefined) ordered[k]=d.categories[k]; });
+          Object.keys(d.categories).forEach(k=>{ if(!(k in ordered)) ordered[k]=d.categories[k]; });
+          saveCats(ordered);
+        } else { saveCats(d.categories); }
+      }
       if(Array.isArray(d.income_cats)) saveIncome(d.income_cats);
       if(Array.isArray(d.fixed)) saveFixed(d.fixed);
       if(Array.isArray(d.loans)) saveLoans(d.loans);
