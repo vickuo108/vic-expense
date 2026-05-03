@@ -2292,7 +2292,7 @@ function renderFinPlanEditor(){
     <div class="list-item-row" data-dkey="${p.id}">
       <span class="list-item-name">${p.name}</span>
       <span class="inline-num-label">$</span>
-      <input type="number" class="inline-num" value="${p.amount||''}" placeholder="0" min="0" step="1"
+      <input type="text" inputmode="decimal" class="inline-num" value="${p.amount||''}" placeholder="0"
         onblur="saveFinPlanAmt('${p.id}',this.value)" onkeydown="if(event.key==='Enter')this.blur()">
       <button class="list-item-del" onclick="delFinPlan('${p.id}')">×</button>
     </div>`).join('');
@@ -2303,7 +2303,10 @@ function renderFinPlanEditor(){
 }
 function saveFinPlanAmt(id,val){
   const plans=loadFinPlan(); const item=plans.find(p=>p.id===id); if(!item) return;
-  item.amount=parseFloat(val)||0; saveFinPlan(plans); renderFinPlanEditor();
+  item.amount=parseFloat(val)||0; saveFinPlan(plans);
+  const total=plans.reduce((s,p)=>s+(p.amount||0),0);
+  const totalEl=document.querySelector('#editor-fin-plan .fin-plan-total span:last-child');
+  if(totalEl) totalEl.textContent='$'+fmt(total);
 }
 function addFinPlan(){
   const name=document.getElementById('fin-plan-inp').value.trim(); if(!name) return;
@@ -2634,8 +2637,13 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='1.8';
+const APP_VERSION='1.9';
 const CHANGELOG=[
+  {version:'1.9',date:'2026-05-04',items:[
+    '報表：雲端同步後若報表頁正在顯示，自動更新順序',
+    '設定財務規劃：輸入金額時鍵盤不再消失（修正重新渲染問題）',
+    '設定財務規劃：金額欄改為小數鍵盤，行為與其他金額欄位一致',
+  ]},
   {version:'1.8',date:'2026-05-04',items:[
     '登入後記憶 Email，下次需重新登入時自動填入',
     '設定頁拖曳排序完成後立即同步雲端，避免順序被舊資料覆蓋',
@@ -2878,6 +2886,7 @@ async function syncFromCloud(){
       _isSyncing=false;
       renderRecords(); renderStats(); renderAllSettingsEditors(); updateHeaderSub();
       populateAddForm(); populateEditForm(); populateFilterDropdowns();
+      if(document.getElementById('panel-report')?.classList.contains('active')) renderFinReport();
     }
     setSyncDot('ok');
   } catch(e){ _isSyncing=false; setSyncDot('error'); }
