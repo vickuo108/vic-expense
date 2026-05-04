@@ -1118,12 +1118,13 @@ function fillSelect(el, opts, blank=''){
   opts.forEach(o=>{ el.innerHTML+=`<option value="${o}">${o}</option>`; });
 }
 
-function fillMethodSelect(el){
+function fillMethodSelect(el, typeVal=''){
   const mg=loadMG();
   el.innerHTML='';
   const order=['現金','信用卡','銀行帳戶','電子錢包'];
   const sorted=[...order.filter(k=>mg[k]),...Object.keys(mg).filter(k=>!order.includes(k))];
   sorted.forEach(grp=>{
+    if(typeVal==='內部轉帳'&&grp==='信用卡') return;
     const og=document.createElement('optgroup'); og.label=grp;
     mg[grp].forEach(m=>{ const op=document.createElement('option'); op.value=m; op.textContent=m; og.appendChild(op); });
     el.appendChild(og);
@@ -1140,13 +1141,29 @@ function getMethodGroup(methodVal){
   return '';
 }
 
-function fillMainSelect(el, methodVal='', blank=true){
+function fillMainSelect(el, methodVal='', blank=true, typeVal=''){
   el.innerHTML=blank?'<option value="">（選填）</option>':'';
   const cats=loadCats(); const income=loadIncome(); const plans=loadFinPlan();
+  if(typeVal==='收入'){
+    const g=document.createElement('optgroup'); g.label='收入';
+    income.forEach(c=>{ const op=document.createElement('option'); op.value=c; op.textContent=c; g.appendChild(op); });
+    el.appendChild(g);
+    return;
+  }
+  if(typeVal==='清償負債'){
+    ['繳信用卡款','貸款'].forEach(v=>{ const op=document.createElement('option'); op.value=v; op.textContent=v; el.appendChild(op); });
+    return;
+  }
+  if(typeVal==='內部轉帳'){
+    const gx=document.createElement('optgroup'); gx.label='銀行帳戶操作';
+    ['提款','轉帳','現金存入','手續費','奉獻'].forEach(v=>{ const op=document.createElement('option'); op.value=v; op.textContent=v; gx.appendChild(op); });
+    el.appendChild(gx);
+    return;
+  }
   const g1=document.createElement('optgroup'); g1.label='浮動支出';
   Object.keys(cats).forEach(c=>{ const op=document.createElement('option'); op.value=c; op.textContent=c; g1.appendChild(op); });
   el.appendChild(g1);
-  ['固定支出','貸款','繳信用卡款'].forEach(v=>{ const op=document.createElement('option'); op.value=v; op.textContent=v; el.appendChild(op); });
+  ['固定支出','繳信用卡款','貸款'].forEach(v=>{ const op=document.createElement('option'); op.value=v; op.textContent=v; el.appendChild(op); });
   if(plans.length){
     const g3=document.createElement('optgroup'); g3.label='財務規劃';
     plans.forEach(p=>{ const op=document.createElement('option'); op.value=p.name; op.textContent=p.name; g3.appendChild(op); });
@@ -1260,13 +1277,20 @@ function initFormListeners(){
 
   document.getElementById('f-method').addEventListener('change',()=>{
     const methodVal=document.getElementById('f-method').value;
+    const typeVal=document.getElementById('f-type').value;
     const mainEl=document.getElementById('f-main');
     const curMain=mainEl.value;
-    fillMainSelect(mainEl, methodVal);
+    fillMainSelect(mainEl, methodVal, true, typeVal);
     mainEl.value=curMain;
     updateSubByMain(mainEl.value, document.getElementById('f-sub'));
   });
-  document.getElementById('f-type').addEventListener('change', autoFillAmtSign);
+  document.getElementById('f-type').addEventListener('change',()=>{
+    autoFillAmtSign();
+    const typeVal=document.getElementById('f-type').value;
+    fillMethodSelect(document.getElementById('f-method'), typeVal);
+    fillMainSelect(document.getElementById('f-main'), '', true, typeVal);
+    fillSelect(document.getElementById('f-sub'), [], '（選填）');
+  });
   document.getElementById('btn-add-submit').addEventListener('click', submitAdd);
   attachAmtFormat('f-amount');
   attachAmtFormat('f-loan-p');
@@ -1479,10 +1503,17 @@ function initEditListeners(){
   });
   document.getElementById('e-method').addEventListener('change',()=>{
     const methodVal=document.getElementById('e-method').value;
+    const typeVal=document.getElementById('e-type').value;
     const curMain=mainEl.value;
-    fillMainSelect(mainEl, methodVal);
+    fillMainSelect(mainEl, methodVal, true, typeVal);
     mainEl.value=curMain;
     updateSubByMain(mainEl.value, subEl);
+  });
+  document.getElementById('e-type').addEventListener('change',()=>{
+    const typeVal=document.getElementById('e-type').value;
+    fillMethodSelect(document.getElementById('e-method'), typeVal);
+    fillMainSelect(mainEl, '', true, typeVal);
+    fillSelect(subEl, [], '（選填）');
   });
   lpEl.addEventListener('input',calcLoanInterest.bind(null,'e'));
   document.getElementById('e-amount').addEventListener('input',calcLoanInterest.bind(null,'e'));
@@ -1500,8 +1531,9 @@ function openEdit(id){
   populateEditForm();
   document.getElementById('e-date').value=r.date;
   document.getElementById('e-type').value=r.type;
+  fillMethodSelect(document.getElementById('e-method'), r.type||'');
   document.getElementById('e-method').value=r.method;
-  fillMainSelect(document.getElementById('e-main'), r.method||'');
+  fillMainSelect(document.getElementById('e-main'), r.method||'', true, r.type||'');
   document.getElementById('e-main').value=r.main||'';
   updateSubByMain(r.main||'', document.getElementById('e-sub'));
   document.getElementById('e-sub').value=r.sub||'';
@@ -2265,12 +2297,14 @@ function saveAcctBalItem(name,val){
 }
 function refreshFormDropdowns(){
   const fMethodEl=document.getElementById('f-method');
+  const fTypeEl=document.getElementById('f-type');
+  const typeVal=fTypeEl?fTypeEl.value:'';
   const curMethod=fMethodEl.value;
-  fillMethodSelect(fMethodEl);
+  fillMethodSelect(fMethodEl, typeVal);
   fMethodEl.value=curMethod;
   const fMainEl=document.getElementById('f-main');
   const curMain=fMainEl.value;
-  fillMainSelect(fMainEl, fMethodEl.value);
+  fillMainSelect(fMainEl, fMethodEl.value, true, typeVal);
   fMainEl.value=curMain;
   updateSubByMain(fMainEl.value, document.getElementById('f-sub'));
   populateFilterDropdowns();
@@ -2642,8 +2676,14 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='1.11';
+const APP_VERSION='1.12';
 const CHANGELOG=[
+  {version:'1.12',date:'2026-05-04',items:[
+    '新增記帳時依分類自動過濾主類別：收入只顯示收入類別、清償負債只顯示貸款及繳信用卡款、內部轉帳只顯示銀行帳戶操作',
+    '內部轉帳的付款方式隱藏信用卡帳戶',
+    '主類別順序調整：繳信用卡款移至貸款前',
+    '30 天未使用 App 才自動登出，日常使用保持登入狀態',
+  ]},
   {version:'1.11',date:'2026-05-04',items:[
     '修正浮動支出順序每次同步後跑掉的問題（Firestore 不保留 key 順序，改用獨立陣列記錄）',
     '切換分頁時保留各分頁的捲軸位置，不再跳回頂部',
@@ -2955,15 +2995,23 @@ async function doLogout(){
 }
 
 // Auth state listener
+const KEY_LAST_ACTIVE='vic2_last_active';
+const THIRTY_DAYS=30*24*60*60*1000;
 _auth.onAuthStateChanged(async user=>{
   _fbUser=user;
   if(user){
+    const lastActive=parseInt(localStorage.getItem(KEY_LAST_ACTIVE)||'0');
+    if(lastActive && Date.now()-lastActive>THIRTY_DAYS){
+      await _auth.signOut(); return;
+    }
+    localStorage.setItem(KEY_LAST_ACTIVE, Date.now().toString());
     localStorage.setItem('vic2_last_email', user.email);
     document.getElementById('acct-email').textContent=user.email;
     const overlay=document.getElementById('login-overlay');
     overlay.style.opacity='0'; setTimeout(()=>overlay.style.display='none',300);
     await syncFromCloud();
   } else {
+    localStorage.removeItem(KEY_LAST_ACTIVE);
     const overlay=document.getElementById('login-overlay');
     overlay.style.display='flex'; overlay.style.opacity='1';
     document.getElementById('login-submit-btn').disabled=false;
