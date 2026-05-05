@@ -2676,8 +2676,11 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='1.12';
+const APP_VERSION='1.13';
 const CHANGELOG=[
+  {version:'1.13',date:'2026-05-05',items:[
+    '自動登出時間調整為 7 天未使用，減少不必要的重新登入',
+  ]},
   {version:'1.12',date:'2026-05-04',items:[
     '新增記帳時依分類自動過濾主類別：收入只顯示收入類別、清償負債只顯示貸款及繳信用卡款、內部轉帳只顯示銀行帳戶操作',
     '內部轉帳的付款方式隱藏信用卡帳戶',
@@ -2996,12 +2999,12 @@ async function doLogout(){
 
 // Auth state listener
 const KEY_LAST_ACTIVE='vic2_last_active';
-const THIRTY_DAYS=30*24*60*60*1000;
+const SEVEN_DAYS=7*24*60*60*1000;
 _auth.onAuthStateChanged(async user=>{
   _fbUser=user;
   if(user){
     const lastActive=parseInt(localStorage.getItem(KEY_LAST_ACTIVE)||'0');
-    if(lastActive && Date.now()-lastActive>THIRTY_DAYS){
+    if(lastActive && Date.now()-lastActive>SEVEN_DAYS){
       await _auth.signOut(); return;
     }
     localStorage.setItem(KEY_LAST_ACTIVE, Date.now().toString());
