@@ -62,6 +62,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .tx-swipe-wrap{position:relative;overflow:hidden}
 .tx-swipe-wrap:last-child .tx-item{border-bottom:none}
 .tx-del-btn{position:absolute;right:0;top:0;bottom:0;width:72px;background:#EF4444;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;-webkit-user-select:none;z-index:1}
+.tx-copy-btn{position:absolute;right:72px;top:0;bottom:0;width:72px;background:#3B5BDB;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;-webkit-user-select:none;z-index:1}
 .tx-item{display:flex;align-items:center;padding:11px 0;cursor:pointer;border-bottom:1px solid #F3F4F6;transition:transform .25s cubic-bezier(.25,1,.5,1);background:#fff;position:relative;z-index:2}
 .tx-item.sw-moving{transition:none}
 .tx-icon-wrap{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
@@ -427,8 +428,8 @@ input[type=number]{-moz-appearance:textfield}
         <button class="stats-qnav-btn" onclick="statScrollTo('sec-ewallet')">👛 電子錢包</button>
         <button class="stats-qnav-btn" onclick="statScrollTo('sec-float')">🛒 浮動支出</button>
         <button class="stats-qnav-btn" onclick="statScrollTo('sec-fixed-table')">🔒 固定支出</button>
-        <button class="stats-qnav-btn" onclick="statScrollTo('sec-cc')">💳 信用卡</button>
         <button class="stats-qnav-btn" onclick="statScrollTo('sec-bank')">🏦 銀行</button>
+        <button class="stats-qnav-btn" onclick="statScrollTo('sec-cc')">💳 信用卡</button>
         <button class="stats-qnav-btn" onclick="statScrollTo('sec-gf')">👩‍❤️‍👨 女友</button>
         <button class="stats-qnav-btn" onclick="statScrollTo('fin-plan-section')">📈 財務規劃</button>
         <button class="stats-qnav-btn" onclick="statScrollTo('loan-section')">🏦 貸款</button>
@@ -504,17 +505,6 @@ input[type=number]{-moz-appearance:textfield}
           </table>
         </div>
       </div>
-      <div class="chart-card" id="sec-cc">
-        <div class="chart-title">💳 信用卡區</div>
-        <div style="overflow-x:auto">
-          <table class="loan-table">
-            <thead><tr>
-              <th>項目</th><th>月刷卡</th><th>繳款</th><th>尚待繳清</th><th style="text-align:left">繳款日</th>
-            </tr></thead>
-            <tbody id="cc-table-body"></tbody>
-          </table>
-        </div>
-      </div>
       <div class="chart-card" id="sec-bank">
         <div class="chart-title">🏦 銀行區</div>
         <div style="overflow-x:auto">
@@ -523,6 +513,17 @@ input[type=number]{-moz-appearance:textfield}
               <th>項目</th><th>本月提款</th><th>本月存錢</th><th>其他進出</th><th>帳戶餘額</th><th>可用餘額</th>
             </tr></thead>
             <tbody id="bank-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="chart-card" id="sec-cc">
+        <div class="chart-title">💳 信用卡區</div>
+        <div style="overflow-x:auto">
+          <table class="loan-table">
+            <thead><tr>
+              <th>項目</th><th>月刷卡</th><th>繳款</th><th>尚待繳清</th><th style="text-align:left">繳款日</th>
+            </tr></thead>
+            <tbody id="cc-table-body"></tbody>
           </table>
         </div>
       </div>
@@ -1426,6 +1427,7 @@ function txItemHTML(r){
     :r.split==='repay'?'<span class="badge badge-repay">GF還款</span>':'';
   const mainLine=[r.method&&r.method!=='無'?r.method:null,r.main||r.type,r.sub].filter(Boolean).join(' · ');
   return `<div class="tx-swipe-wrap">
+    <div class="tx-copy-btn" onclick="copyRecord('${r.id}')">複製</div>
     <div class="tx-del-btn" onclick="swipeDelete('${r.id}')">刪除</div>
     <div class="tx-item" data-rid="${r.id}">
       <div class="tx-icon-wrap ${bg}">${ic}</div>
@@ -1452,7 +1454,7 @@ function initSwipeDelete(){
   list.addEventListener('click',_swClick,true);
 }
 function _swStart(e){
-  if(e.target.closest('.tx-del-btn')) return;
+  if(e.target.closest('.tx-del-btn')||e.target.closest('.tx-copy-btn')) return;
   const item=e.target.closest('.tx-item');
   if(_swOpen&&_swOpen!==item){ _swReset(_swOpen); _swOpen=null; }
   if(!item) return;
@@ -1464,14 +1466,14 @@ function _swMove(e){
   if(!_sw.dir){ if(Math.abs(dx)<5&&Math.abs(dy)<5) return; _sw.dir=Math.abs(dx)>=Math.abs(dy)?'h':'v'; }
   if(_sw.dir==='v') return;
   e.preventDefault();
-  const x=Math.min(0,Math.max(-72,(_sw.wasOpen?-72:0)+dx));
+  const x=Math.min(0,Math.max(-144,(_sw.wasOpen?-144:0)+dx));
   _sw.dx=x; _sw.item.style.transform=`translateX(${x}px)`; _sw.item.classList.add('sw-moving');
 }
 function _swEnd(){
   if(!_sw) return;
   const{item,dx,dir}=_sw; item.classList.remove('sw-moving');
   if(dir==='h'){
-    if(dx<-40){ item.style.transform='translateX(-72px)'; item._swOpen=true; _swOpen=item; }
+    if(dx<-40){ item.style.transform='translateX(-144px)'; item._swOpen=true; _swOpen=item; }
     else{ _swReset(item); _swOpen=null; }
   }
   _sw=null;
@@ -1490,6 +1492,18 @@ function swipeDelete(id){
   _swOpen=null;
   saveRecords(loadRecords().filter(x=>x.id!==id));
   renderRecords(); updateHeaderSub(); renderStats(); showToast('🗑 已刪除');
+  scheduleSyncToCloud();
+}
+function copyRecord(id){
+  _swOpen=null;
+  const records=loadRecords();
+  const orig=records.find(r=>r.id===id);
+  if(!orig) return;
+  const copy={...orig, id:genId(), date:localDateStr()};
+  records.unshift(copy);
+  saveRecords(records);
+  renderRecords(); updateHeaderSub(); renderStats(); showToast('✅ 已複製');
+  scheduleSyncToCloud();
 }
 
 // ─── Edit Modal ────────────────────────────────────────────────────────────
@@ -1902,8 +1916,8 @@ function renderStats(){
   renderEWalletSection(data, prefix);
   renderFloatSection(data, prefix);
   renderFixedSection(data, prefix);
-  renderCCSection(data, prefix);
   renderBankSection(data, prefix);
+  renderCCSection(data, prefix);
   renderFinPlanSection(data, prefix);
   renderGFSummary(data, prefix);
   renderLoanTable(data, prefix);
@@ -2676,8 +2690,12 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='1.13';
+const APP_VERSION='1.14';
 const CHANGELOG=[
+  {version:'1.14',date:'2026-05-05',items:[
+    '記錄列表新增複製功能：左滑顯示複製（藍）與刪除（紅）按鈕，複製後日期設為今天',
+    '統計頁順序調整：銀行區移至固定支出下方，信用卡區移至銀行區後面',
+  ]},
   {version:'1.13',date:'2026-05-05',items:[
     '自動登出時間調整為 7 天未使用，減少不必要的重新登入',
   ]},
