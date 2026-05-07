@@ -2404,8 +2404,12 @@ function simpleListDel(cid, idx){
 }
 
 function renderFloatCatsEditor(){
-  const cats=loadCats();
   const el=document.getElementById('editor-float-cats');
+  const openMains=new Set([...el.querySelectorAll('[id^="fce-wrap-"]')]
+    .filter(w=>w.style.display!=='none')
+    .map(w=>w.querySelector('.sub-list')?.dataset.dsubmain)
+    .filter(Boolean));
+  const cats=loadCats();
   const entries=Object.entries(cats);
   const rows=entries.map(([main,subs],i)=>{
     const subItems=subs.map((s,j)=>`
@@ -2433,6 +2437,13 @@ function renderFloatCatsEditor(){
     <input class="list-add-input" id="fce-main-inp" placeholder="新增主類別..." maxlength="15">
     <button class="list-add-btn" onclick="addFloatMain()">新增</button>
   </div>`;
+  if(openMains.size) entries.forEach(([main],i)=>{
+    if(!openMains.has(main)) return;
+    const wrap=document.getElementById(`fce-wrap-${i}`);
+    const btn=document.getElementById(`fce-exp-${i}`);
+    if(wrap) wrap.style.display='block';
+    if(btn) btn.textContent='▼';
+  });
 }
 
 function toggleFCE(i){
@@ -2718,8 +2729,11 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='1.15';
+const APP_VERSION='1.16';
 const CHANGELOG=[
+  {version:'1.16',date:'2026-05-07',items:[
+    '修正浮動支出子類別拖移後自動收起的問題，展開狀態現在會保持',
+  ]},
   {version:'1.15',date:'2026-05-07',items:[
     '浮動支出設定：點類別名稱可改名，改名後所有記錄與每月預算自動同步更新',
     '浮動支出設定：長按主類別或子類別可拖移調整順序',
