@@ -150,8 +150,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .list-item-row{display:flex;align-items:center;padding:11px 14px;border-bottom:1px solid #F3F4F6;gap:8px}
 .list-item-name{flex:1;font-size:14px}
 .list-item-del{background:none;border:none;color:#EF4444;font-size:18px;cursor:pointer;padding:2px;flex-shrink:0}
-.list-item-expand{background:none;border:none;color:#9BA3AF;font-size:15px;cursor:pointer;padding:2px;flex-shrink:0}
-.ds-dragging{background:#EEF2FF!important;box-shadow:0 4px 14px rgba(59,91,219,0.2);border-radius:8px;opacity:0.96;position:relative;z-index:10;transform:scale(1.01)}
+.list-item-expand{background:none;border:none;color:#9BA3AF;font-size:15px;cursor:pointer;padding:2px;flex-shrink:0}.ds-dragging{background:#EEF2FF!important;box-shadow:0 4px 14px rgba(59,91,219,0.2);border-radius:8px;opacity:0.96;position:relative;z-index:10;transform:scale(1.01)}
 .list-add-row{display:flex;gap:8px;padding:10px 14px;border-top:1px solid #F3F4F6;background:#FAFAFA}
 .list-add-input{flex:1;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:14px;background:#fff}
 .list-add-input:focus{outline:none;border-color:#3B5BDB}
@@ -2411,11 +2410,12 @@ function renderFloatCatsEditor(){
   const rows=entries.map(([main,subs],i)=>{
     const subItems=subs.map((s,j)=>`
       <div class="sub-list-item" data-dkey="${s}">
-        <span style="flex:1">${s}</span>
-        <button onclick="delFloatSub('${esc(main)}',${j})">×</button>
+        <span style="flex:1;cursor:pointer" onclick="editFloatSub('${esc(main)}',${j},'${esc(s)}')">${s}</span>
+        <button style="background:none;border:none;color:#EF4444;font-size:14px;cursor:pointer" onclick="delFloatSub('${esc(main)}',${j})">×</button>
       </div>`).join('');
-    return `<div class="list-item-row" data-dkey="${main}">
-        <span class="list-item-name">${main}</span>
+    return `<div class="list-item-row" data-dkey="${main}" style="display:block;padding:0;border-bottom:none">
+      <div style="display:flex;align-items:center;padding:11px 14px;gap:8px;border-bottom:1px solid #F3F4F6">
+        <span class="list-item-name" style="cursor:pointer" onclick="editFloatMain(${i},'${esc(main)}')">${main}</span>
         <button class="list-item-expand" id="fce-exp-${i}" onclick="toggleFCE(${i})">▶</button>
         <button class="list-item-del" onclick="delFloatMain('${esc(main)}')">×</button>
       </div>
@@ -2426,7 +2426,8 @@ function renderFloatCatsEditor(){
             <button class="sub-add-btn" onclick="addFloatSub('${esc(main)}',${i})">+</button>
           </div>
         </div>
-      </div>`;
+      </div>
+    </div>`;
   }).join('');
   el.innerHTML=rows+`<div class="list-add-row">
     <input class="list-add-input" id="fce-main-inp" placeholder="新增主類別..." maxlength="15">
@@ -2442,6 +2443,33 @@ function addFloatMain(){ const inp=document.getElementById('fce-main-inp'), val=
 function delFloatMain(main){ if(!confirm(`刪除「${main}」？`)) return; const cats=loadCats(); delete cats[main]; saveCats(cats); renderFloatCatsEditor(); refreshFormDropdowns(); showToast('已刪除'); }
 function addFloatSub(main,i){ const inp=document.getElementById(`fce-sub-${i}`), val=inp.value.trim(); if(!val) return; const cats=loadCats(); if(!cats[main]) return; if(cats[main].includes(val)){showToast('已存在');return;} cats[main].push(val); saveCats(cats); inp.value=''; renderFloatCatsEditor(); refreshFormDropdowns(); const w=document.getElementById(`fce-wrap-${i}`); if(w){w.style.display='block'; document.getElementById(`fce-exp-${i}`).textContent='▼';} showToast('✅ 已新增'); }
 function delFloatSub(main,idx){ const cats=loadCats(); if(!cats[main]) return; cats[main].splice(idx,1); saveCats(cats); renderFloatCatsEditor(); refreshFormDropdowns(); showToast('已刪除'); }
+function editFloatMain(i,oldName){
+  const newName=(prompt(`重新命名「${oldName}」：`,oldName)||'').trim();
+  if(!newName||newName===oldName) return;
+  const cats=loadCats();
+  if(cats[newName]!==undefined){showToast('已存在此名稱');return;}
+  saveCats(Object.fromEntries(Object.entries(cats).map(([k,v])=>[k===oldName?newName:k,v])));
+  const records=loadRecords(); let rc=false;
+  records.forEach(r=>{ if(r.main===oldName){r.main=newName;rc=true;} });
+  if(rc) saveRecords(records);
+  const budgets=loadMonthlyBudgets();
+  Object.values(budgets).forEach(mo=>{ if(mo[oldName]!==undefined){mo[newName]=mo[oldName];delete mo[oldName];} });
+  saveMonthlyBudgets(budgets);
+  renderFloatCatsEditor(); refreshFormDropdowns(); showToast('✅ 已更名');
+  scheduleSyncToCloud();
+}
+function editFloatSub(main,idx,oldSub){
+  const newSub=(prompt(`重新命名「${oldSub}」：`,oldSub)||'').trim();
+  if(!newSub||newSub===oldSub) return;
+  const cats=loadCats(); if(!cats[main]) return;
+  if(cats[main].includes(newSub)){showToast('已存在此名稱');return;}
+  cats[main][idx]=newSub; saveCats(cats);
+  const records=loadRecords(); let rc=false;
+  records.forEach(r=>{ if(r.main===main&&r.sub===oldSub){r.sub=newSub;rc=true;} });
+  if(rc) saveRecords(records);
+  renderFloatCatsEditor(); refreshFormDropdowns(); showToast('✅ 已更名');
+  scheduleSyncToCloud();
+}
 
 function renderFixedEditor(){
   const fixed=loadFixed();
@@ -2690,8 +2718,12 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='1.14';
+const APP_VERSION='1.15';
 const CHANGELOG=[
+  {version:'1.15',date:'2026-05-07',items:[
+    '浮動支出設定：點類別名稱可改名，改名後所有記錄與每月預算自動同步更新',
+    '浮動支出設定：長按主類別或子類別可拖移調整順序',
+  ]},
   {version:'1.14',date:'2026-05-05',items:[
     '記錄列表新增複製功能：左滑顯示複製（藍）與刪除（紅）按鈕，複製後日期設為今天',
     '統計頁順序調整：銀行區移至固定支出下方，信用卡區移至銀行區後面',
