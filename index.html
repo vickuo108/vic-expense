@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#3B5BDB">
+<meta name="theme-color" content="var(--primary)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Vic記帳">
@@ -11,16 +11,22 @@
 <title>Vic 記帳本</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
+:root{
+  --primary:#3B5BDB;--primary-light:#5C7CFA;--primary-darker:#1A56DB;
+  --primary-tint:#EEF2FF;--primary-deep:#3730A3;--primary-border:#C7D2FE;
+  --primary-s12:rgba(59,91,219,.12);--primary-s20:rgba(59,91,219,.20);
+  --primary-s25:rgba(59,91,219,.25);--primary-s35:rgba(59,91,219,.35);
+}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'PingFang TC','Noto Sans TC',sans-serif;background:#F0F2F5;color:#1A1A2E}
 .app{display:flex;flex-direction:column;height:100dvh;min-height:-webkit-fill-available;max-width:480px;margin:0 auto;position:relative;background:#F0F2F5}
-.header{background:linear-gradient(135deg,#3B5BDB,#5C7CFA);color:#fff;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.header{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 .header-title{font-size:18px;font-weight:700;letter-spacing:.5px}
 .header-sub{font-size:12px;opacity:.8;margin-top:1px}
 .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 12px 80px}
 .bottom-nav{position:absolute;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #E8EAED;display:flex;z-index:100;padding-bottom:max(env(safe-area-inset-bottom),8px)}
 .nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 4px 6px;cursor:pointer;color:#9BA3AF;border:none;background:none;transition:color .2s}
-.nav-btn.active{color:#3B5BDB}
+.nav-btn.active{color:var(--primary)}
 .nav-btn .nav-icon{font-size:22px;line-height:1}
 .nav-btn .nav-label{font-size:10px;margin-top:3px;font-weight:500}
 .nav-btn.active .nav-label{font-weight:700}
@@ -31,7 +37,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .form-group{margin-bottom:14px}
 .form-label{font-size:12px;color:#6B7280;margin-bottom:5px;display:block;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
 .form-control{width:100%;padding:11px 13px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:15px;background:#fff;color:#1A1A2E;appearance:none;-webkit-appearance:none}
-.form-control:focus{outline:none;border-color:#3B5BDB;box-shadow:0 0 0 3px rgba(59,91,219,.12)}
+.form-control:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-s12)}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .amount-wrap{position:relative}
 .amount-currency{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#9BA3AF;font-size:15px;pointer-events:none}
@@ -40,19 +46,19 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .split-opt{padding:9px 6px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:13px;cursor:pointer;background:#fff;text-align:center;transition:all .2s;line-height:1.3}
 .split-opt small{display:block;font-size:10px;color:#9BA3AF;margin-top:2px}
 .split-opt.active{border-width:2px}
-.split-opt[data-v="null"].active{background:#EEF2FF;border-color:#3B5BDB;color:#3B5BDB}
+.split-opt[data-v="null"].active{background:var(--primary-tint);border-color:var(--primary);color:var(--primary)}
 .split-opt[data-v="1"].active{background:#FFFBEB;border-color:#F59F00;color:#B45309}
 .split-opt[data-v="0"].active{background:#FFF1F2;border-color:#F43F5E;color:#BE123C}
 .split-opt[data-v="repay"].active{background:#DCFCE7;border-color:#16A34A;color:#15803D}
 .share-preview{background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:10px 13px;font-size:13px;color:#1D4ED8;margin-top:8px;display:none}
 .share-preview.show{display:block}
-.btn-submit{width:100%;padding:14px;background:linear-gradient(135deg,#3B5BDB,#5C7CFA);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-top:4px;box-shadow:0 4px 12px rgba(59,91,219,.35)}
+.btn-submit{width:100%;padding:14px;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-top:4px;box-shadow:0 4px 12px var(--primary-s35)}
 .btn-submit:active{transform:scale(.98)}
 .search-row{display:flex;gap:8px;margin-bottom:10px}
 .search-input{flex:1;padding:10px 13px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:14px;background:#fff}
-.search-input:focus{outline:none;border-color:#3B5BDB}
+.search-input:focus{outline:none;border-color:var(--primary)}
 .filter-toggle{padding:10px 13px;border:1.5px solid #E5E7EB;border-radius:10px;background:#fff;cursor:pointer;font-size:14px;white-space:nowrap;color:#6B7280}
-.filter-toggle.active{border-color:#3B5BDB;color:#3B5BDB;background:#EEF2FF}
+.filter-toggle.active{border-color:var(--primary);color:var(--primary);background:var(--primary-tint)}
 .filter-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:none}
 .filter-card.open{display:block}
 .filter-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
@@ -62,7 +68,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .tx-swipe-wrap{position:relative;overflow:hidden}
 .tx-swipe-wrap:last-child .tx-item{border-bottom:none}
 .tx-del-btn{position:absolute;right:0;top:0;bottom:0;width:72px;background:#EF4444;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;-webkit-user-select:none;z-index:1}
-.tx-copy-btn{position:absolute;right:72px;top:0;bottom:0;width:72px;background:#3B5BDB;color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;-webkit-user-select:none;z-index:1}
+.tx-copy-btn{position:absolute;right:72px;top:0;bottom:0;width:72px;background:var(--primary);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;user-select:none;-webkit-user-select:none;z-index:1}
 .tx-item{display:flex;align-items:center;padding:11px 0;cursor:pointer;border-bottom:1px solid #F3F4F6;transition:transform .25s cubic-bezier(.25,1,.5,1);background:#fff;position:relative;z-index:2}
 .tx-item.sw-moving{transition:none}
 .tx-icon-wrap{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
@@ -107,13 +113,13 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .loan-table td.note-cell{color:#9BA3AF;font-size:10px;text-align:left;white-space:normal}
 .loan-table .total-row td{background:#F1F5F9;font-weight:700;border-top:2px solid #D1D5DB;border-bottom:none}
 .rep-month-btn{flex-shrink:0;padding:5px 10px;border-radius:8px;border:1.5px solid #E5E7EB;background:#fff;font-size:11px;cursor:pointer;white-space:nowrap;color:#374151}
-.rep-month-btn.active{background:#3B5BDB;color:#fff;border-color:#3B5BDB}
+.rep-month-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
 .report-table{width:100%;border-collapse:collapse;font-size:12px;min-width:320px}
 .report-table th,.report-table td{padding:7px 8px;border-bottom:1px solid #F3F4F6;text-align:right;white-space:nowrap}
 .report-table th:first-child,.report-table td:first-child{text-align:left;position:sticky;left:0;background:#fff;z-index:1;min-width:80px;font-size:11px}
 .report-table thead th{background:#F8FAFC;font-weight:600;color:#374151;border-bottom:2px solid #E5E7EB;position:sticky;top:0;z-index:3}
 .report-table thead th:first-child{background:#F8FAFC;z-index:4}
-.report-table .rep-grp td{background:#EEF2FF;font-weight:700;color:#3730A3;font-size:13px;padding:8px 8px;border-left:3px solid #3B5BDB;border-top:2px solid #C7D2FE;position:sticky;left:0}
+.report-table .rep-grp td{background:var(--primary-tint);font-weight:700;color:var(--primary-deep);font-size:13px;padding:8px 8px;border-left:3px solid var(--primary);border-top:2px solid var(--primary-border);position:sticky;left:0}
 .report-table .rep-grp td:not(:first-child){position:static}
 .report-table tbody tr:not(.rep-grp):not(.rep-tot):not(.rep-net) td{background:#F8FAFC}
 .report-table .rep-tot td{background:#fff;font-weight:700;border-top:1.5px solid #D1D5DB}
@@ -121,7 +127,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .report-table .rep-net td{background:#EFF6FF;font-weight:700;color:#1D4ED8;border-top:2px solid #BFDBFE}
 .rep-view-toggle{display:flex;gap:6px;margin-bottom:10px}
 .rep-view-btn{flex:1;padding:7px 0;border-radius:8px;border:1.5px solid #E5E7EB;background:#fff;font-size:12px;cursor:pointer;font-weight:600;color:#374151}
-.rep-view-btn.active{background:#3B5BDB;color:#fff;border-color:#3B5BDB}
+.rep-view-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
 .qm-table{border-collapse:collapse;font-size:11px;min-width:720px;width:100%}
 .qm-table th,.qm-table td{padding:5px 7px;border-bottom:1px solid #F3F4F6;text-align:right;white-space:nowrap}
 .qm-table th:first-child,.qm-table td:first-child{text-align:left;position:sticky;left:0;background:#fff;z-index:2;min-width:40px;font-weight:600}
@@ -150,11 +156,14 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .list-item-row{display:flex;align-items:center;padding:11px 14px;border-bottom:1px solid #F3F4F6;gap:8px}
 .list-item-name{flex:1;font-size:14px}
 .list-item-del{background:none;border:none;color:#EF4444;font-size:18px;cursor:pointer;padding:2px;flex-shrink:0}
-.list-item-expand{background:none;border:none;color:#9BA3AF;font-size:15px;cursor:pointer;padding:2px;flex-shrink:0}.ds-dragging{background:#EEF2FF!important;box-shadow:0 4px 14px rgba(59,91,219,0.2);border-radius:8px;opacity:0.96;position:relative;z-index:10;transform:scale(1.01)}
+.list-item-expand{background:none;border:none;color:#9BA3AF;font-size:15px;cursor:pointer;padding:2px;flex-shrink:0}.theme-swatch{width:34px;height:34px;border-radius:50%;border:3px solid transparent;cursor:pointer;flex-shrink:0;transition:border-color .15s,transform .15s;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.theme-swatch-active{border-color:#1F2937!important;transform:scale(1.15)}
+.theme-label{font-size:11px;color:#6B7280;text-align:center;margin-top:3px}
+.ds-dragging{background:var(--primary-tint)!important;box-shadow:0 4px 14px var(--primary-s20);border-radius:8px;opacity:0.96;position:relative;z-index:10;transform:scale(1.01)}
 .list-add-row{display:flex;gap:8px;padding:10px 14px;border-top:1px solid #F3F4F6;background:#FAFAFA}
 .list-add-input{flex:1;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:14px;background:#fff}
-.list-add-input:focus{outline:none;border-color:#3B5BDB}
-.list-add-btn{padding:9px 14px;background:#3B5BDB;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap}
+.list-add-input:focus{outline:none;border-color:var(--primary)}
+.list-add-btn{padding:9px 14px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap}
 
 /* Sub list (for float cats) */
 .sub-list{background:#F9FAFB;padding:0 14px 8px 42px;border-bottom:1px solid #F3F4F6}
@@ -164,12 +173,12 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .sub-list-item button{background:none;border:none;color:#EF4444;font-size:14px;cursor:pointer}
 .sub-add-row{display:flex;gap:6px;padding:7px 0 0}
 .sub-add-input{flex:1;padding:6px 10px;border:1.5px solid #E5E7EB;border-radius:7px;font-size:13px;background:#fff}
-.sub-add-input:focus{outline:none;border-color:#3B5BDB}
-.sub-add-btn{padding:6px 12px;background:#5C7CFA;color:#fff;border:none;border-radius:7px;font-size:13px;cursor:pointer}
+.sub-add-input:focus{outline:none;border-color:var(--primary)}
+.sub-add-btn{padding:6px 12px;background:var(--primary-light);color:#fff;border:none;border-radius:7px;font-size:13px;cursor:pointer}
 
 /* Inline number input (for fixed/loan amounts in settings) */
 .inline-num{width:90px;padding:5px 7px;border:1.5px solid #E5E7EB;border-radius:7px;font-size:13px;text-align:right;background:#F9FAFB;color:#374151}
-.inline-num:focus{outline:none;border-color:#3B5BDB;background:#fff}
+.inline-num:focus{outline:none;border-color:var(--primary);background:#fff}
 .inline-num-label{font-size:11px;color:#9BA3AF;white-space:nowrap;flex-shrink:0}
 
 /* Modal */
@@ -181,7 +190,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .modal-close{background:#F3F4F6;border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;color:#6B7280}
 .modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
 .btn{padding:12px;border-radius:10px;border:none;font-size:14px;font-weight:700;cursor:pointer;width:100%}
-.btn-primary{background:#3B5BDB;color:#fff}
+.btn-primary{background:var(--primary);color:#fff}
 .btn-danger{background:#FFF1F2;color:#EF4444;border:1.5px solid #FECDD3}
 
 /* Category icon backgrounds */
@@ -219,22 +228,22 @@ input[type=number]{-moz-appearance:textfield}
 .stats-quicknav{display:flex;gap:6px;overflow-x:auto;padding:0 0 10px;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
 .stats-quicknav::-webkit-scrollbar{display:none}
 .stats-qnav-btn{flex-shrink:0;padding:5px 11px;border-radius:20px;border:1.5px solid #E5E7EB;background:#fff;font-size:12px;cursor:pointer;white-space:nowrap;color:#374151;font-weight:500}
-.stats-qnav-btn:active{background:#EEF2FF;border-color:#3B5BDB;color:#3B5BDB}
+.stats-qnav-btn:active{background:var(--primary-tint);border-color:var(--primary);color:var(--primary)}
 .rep-budget-input{width:72px;padding:3px 5px;border:1.5px solid #CBD5E1;border-radius:6px;font-size:11px;text-align:right;background:#F8FAFC;color:#374151}
-.rep-budget-input:focus{outline:none;border-color:#3B5BDB;background:#fff}
-.update-banner{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:linear-gradient(135deg,#1A56DB,#3B5BDB);color:#fff;z-index:800;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top));display:none;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,.25)}
+.rep-budget-input:focus{outline:none;border-color:var(--primary);background:#fff}
+.update-banner{position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:linear-gradient(135deg,var(--primary-darker),var(--primary));color:#fff;z-index:800;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top));display:none;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,.25)}
 .update-banner.show{display:flex}
-.update-banner-btn{background:#fff;color:#1A56DB;border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
+.update-banner-btn{background:#fff;color:var(--primary-darker);border:none;border-radius:8px;padding:7px 16px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0}
 .glossary-overlay{position:fixed;inset:0;background:#F0F2F5;z-index:600;display:none;flex-direction:column}
 .glossary-overlay.open{display:flex}
-.glossary-header{background:linear-gradient(135deg,#3B5BDB,#5C7CFA);color:#fff;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));display:flex;align-items:center;gap:12px;flex-shrink:0}
+.glossary-header{background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top));display:flex;align-items:center;gap:12px;flex-shrink:0}
 .glossary-body{flex:1;overflow-y:auto;padding:12px 12px 32px;-webkit-overflow-scrolling:touch}
 .glossary-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
 .glossary-term{font-size:16px;font-weight:700;color:#1A1A2E;margin-bottom:8px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
 .glossary-def{font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap;cursor:pointer}
 .glossary-def.collapsed{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;white-space:normal;cursor:pointer}
 .glossary-actions{display:flex;gap:5px;flex-shrink:0}
-.glossary-edit-btn{background:#EEF2FF;border:none;border-radius:6px;padding:4px 9px;font-size:12px;color:#3B5BDB;cursor:pointer;white-space:nowrap}
+.glossary-edit-btn{background:var(--primary-tint);border:none;border-radius:6px;padding:4px 9px;font-size:12px;color:var(--primary);cursor:pointer;white-space:nowrap}
 .glossary-del-btn{background:#FFF1F2;border:none;border-radius:6px;padding:4px 8px;font-size:12px;color:#EF4444;cursor:pointer}
 .glossary-toggle{font-size:10px;color:#9BA3AF;cursor:pointer;margin-top:4px;display:block;text-align:right}
 /* ── 登入畫面 ── */
@@ -244,11 +253,11 @@ input[type=number]{-moz-appearance:textfield}
 .login-title{font-size:20px;font-weight:700;text-align:center;color:#1A1A2E;margin-bottom:4px}
 .login-sub{font-size:13px;color:#9BA3AF;text-align:center;margin-bottom:24px}
 .login-input{width:100%;padding:12px 14px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:15px;box-sizing:border-box;margin-bottom:12px;outline:none;-webkit-appearance:none}
-.login-input:focus{border-color:#3B5BDB}
-.login-btn{width:100%;padding:14px;background:#3B5BDB;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:12px}
+.login-input:focus{border-color:var(--primary)}
+.login-btn{width:100%;padding:14px;background:var(--primary);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:12px}
 .login-btn:disabled{opacity:.6;cursor:default}
 .login-switch{text-align:center;font-size:13px;color:#9BA3AF}
-.login-switch b{color:#3B5BDB;cursor:pointer;font-weight:600}
+.login-switch b{color:var(--primary);cursor:pointer;font-weight:600}
 .login-error{color:#EF4444;font-size:13px;text-align:center;margin-top:8px;min-height:18px}
 /* ── 同步指示點 ── */
 #sync-dot{width:8px;height:8px;border-radius:50%;background:#10B981;flex-shrink:0;margin-right:4px;display:none}
@@ -592,6 +601,7 @@ input[type=number]{-moz-appearance:textfield}
         <button class="stats-qnav-btn" onclick="setScrollTo('ss-loan')">🏦 貸款</button>
         <button class="stats-qnav-btn" onclick="setScrollTo('ss-cclimit')">💳 信用卡額度</button>
         <button class="stats-qnav-btn" onclick="setScrollTo('ss-backup')">🛠️ 維護與工具</button>
+        <button class="stats-qnav-btn" onclick="setScrollTo('ss-theme')">🎨 顏色</button>
         <button class="stats-qnav-btn" onclick="setScrollTo('ss-account')">👤 帳號</button>
       </div>
 
@@ -654,14 +664,19 @@ input[type=number]{-moz-appearance:textfield}
       </button>
 
       <button class="settings-btn" onclick="openGlossary()">
-        <div class="s-icon" style="background:#EEF2FF">📚</div>
+        <div class="s-icon" style="background:var(--primary-tint)">📚</div>
         <div class="s-text"><div class="s-title">財務語言</div><div class="s-desc">常見財務名詞解釋，可自行新增與編輯</div></div>
         <span class="s-arrow">›</span>
       </button>
 
+      <div id="ss-theme" class="settings-section-title">🎨 介面顏色</div>
+      <div class="card" style="padding:14px 16px;margin-bottom:8px">
+        <div id="theme-picker" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"></div>
+      </div>
+
       <div id="ss-account" class="settings-section-title">👤 帳號</div>
       <div class="card" style="padding:14px;margin-bottom:8px">
-        <div style="font-size:13px;color:#374151;margin-bottom:12px">已登入：<span id="acct-email" style="font-weight:600;color:#3B5BDB"></span></div>
+        <div style="font-size:13px;color:#374151;margin-bottom:12px">已登入：<span id="acct-email" style="font-weight:600;color:var(--primary)"></span></div>
         <div style="display:flex;gap:8px">
           <button onclick="manualSync()" style="flex:1;padding:10px;background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:8px;font-size:13px;color:#1D4ED8;cursor:pointer;font-weight:600">☁️ 立即同步</button>
           <button onclick="doLogout()" style="flex:1;padding:10px;background:#FFF1F2;border:1.5px solid #FECDD3;border-radius:8px;font-size:13px;color:#EF4444;cursor:pointer;font-weight:600">登出</button>
@@ -840,6 +855,30 @@ input[type=number]{-moz-appearance:textfield}
 // ─── Default Data ─────────────────────────────────────────────────────────
 
 const DEFAULT_TYPES = ['費用','收入','內部轉帳','清償負債','成本','投資'];
+
+// ─── 主題色 ────────────────────────────────────────────────────────────────────
+const THEMES=[
+  {id:'blue',  name:'藍',   primary:'#3B5BDB',light:'#5C7CFA',darker:'#1A56DB',tint:'#EEF2FF',deep:'#3730A3',border:'#C7D2FE',s12:'rgba(59,91,219,.12)', s20:'rgba(59,91,219,.20)',s25:'rgba(59,91,219,.25)',s35:'rgba(59,91,219,.35)'},
+  {id:'teal',  name:'青藍', primary:'#0D9488',light:'#14B8A6',darker:'#0F766E',tint:'#F0FDFA',deep:'#134E4A',border:'#99F6E4',s12:'rgba(13,148,136,.12)',s20:'rgba(13,148,136,.20)',s25:'rgba(13,148,136,.25)',s35:'rgba(13,148,136,.35)'},
+  {id:'green', name:'綠',   primary:'#059669',light:'#10B981',darker:'#047857',tint:'#ECFDF5',deep:'#064E3B',border:'#A7F3D0',s12:'rgba(5,150,105,.12)', s20:'rgba(5,150,105,.20)', s25:'rgba(5,150,105,.25)', s35:'rgba(5,150,105,.35)'},
+  {id:'violet',name:'紫',   primary:'#7C3AED',light:'#8B5CF6',darker:'#6D28D9',tint:'#F5F3FF',deep:'#4C1D95',border:'#DDD6FE',s12:'rgba(124,58,237,.12)',s20:'rgba(124,58,237,.20)',s25:'rgba(124,58,237,.25)',s35:'rgba(124,58,237,.35)'},
+  {id:'rose',  name:'玫瑰', primary:'#E11D48',light:'#F43F5E',darker:'#BE123C',tint:'#FFF1F2',deep:'#881337',border:'#FECDD3',s12:'rgba(225,29,72,.12)', s20:'rgba(225,29,72,.20)', s25:'rgba(225,29,72,.25)', s35:'rgba(225,29,72,.35)'},
+  {id:'amber', name:'橙',   primary:'#D97706',light:'#F59E0B',darker:'#B45309',tint:'#FFFBEB',deep:'#78350F',border:'#FDE68A',s12:'rgba(217,119,6,.12)', s20:'rgba(217,119,6,.20)', s25:'rgba(217,119,6,.25)', s35:'rgba(217,119,6,.35)'},
+];
+const KEY_THEME='vic2_theme';
+function applyTheme(id){
+  const t=THEMES.find(x=>x.id===id)||THEMES[0];
+  const r=document.documentElement.style;
+  r.setProperty('--primary',t.primary);r.setProperty('--primary-light',t.light);
+  r.setProperty('--primary-darker',t.darker);r.setProperty('--primary-tint',t.tint);
+  r.setProperty('--primary-deep',t.deep);r.setProperty('--primary-border',t.border);
+  r.setProperty('--primary-s12',t.s12);r.setProperty('--primary-s20',t.s20);
+  r.setProperty('--primary-s25',t.s25);r.setProperty('--primary-s35',t.s35);
+  document.querySelector('meta[name="theme-color"]').content=t.primary;
+  localStorage.setItem(KEY_THEME,t.id);
+  document.querySelectorAll('.theme-swatch').forEach(el=>el.classList.toggle('theme-swatch-active',el.dataset.tid===t.id));
+}
+applyTheme(localStorage.getItem(KEY_THEME)||'blue');
 
 const DEFAULT_METHODS_GROUPED = {
   '現金':['現金'],
@@ -2193,10 +2232,20 @@ function renderCCChart(data, prefix){
   if(ccBarChart) ccBarChart.destroy();
   const canvas=document.getElementById('chart-cc'); if(!canvas) return;
   if(!cards.length||charges.every(c=>c===0)){ canvas.parentElement.innerHTML='<div style="text-align:center;padding:40px;color:#9BA3AF;font-size:13px">本月尚無信用卡消費</div>'; return; }
-  ccBarChart=new Chart(canvas,{type:'bar',data:{labels:cards,datasets:[{data:charges,backgroundColor:'rgba(59,91,219,.25)',borderColor:'#3B5BDB',borderWidth:1.5,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+fmt(v),font:{size:10}},grid:{color:'#F3F4F6'}},x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}}}}});
+  ccBarChart=new Chart(canvas,{type:'bar',data:{labels:cards,datasets:[{data:charges,backgroundColor:getComputedStyle(document.documentElement).getPropertyValue('--primary-s25').trim(),borderColor:getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(),borderWidth:1.5,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+fmt(v),font:{size:10}},grid:{color:'#F3F4F6'}},x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}}}}});
 }
 
 // ─── Settings editors ──────────────────────────────────────────────────────
+function renderThemePicker(){
+  const cur=localStorage.getItem(KEY_THEME)||'blue';
+  const el=document.getElementById('theme-picker'); if(!el) return;
+  el.innerHTML=THEMES.map(t=>`
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+      <div class="theme-swatch${t.id===cur?' theme-swatch-active':''}" data-tid="${t.id}"
+        style="background:${t.primary}" onclick="applyTheme('${t.id}')"></div>
+      <div class="theme-label">${t.name}</div>
+    </div>`).join('');
+}
 function renderAllSettingsEditors(){
   const mg=loadMG();
   renderCCEditor('editor-cc', mg['信用卡']||[]);
@@ -2209,6 +2258,7 @@ function renderAllSettingsEditors(){
   renderLoansEditor();
   renderCCLimitsEditor();
   renderFinPlanEditor();
+  renderThemePicker();
 }
 
 function renderCCEditor(containerId, list){
@@ -2729,8 +2779,12 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='1.16';
+const APP_VERSION='1.17';
 const CHANGELOG=[
+  {version:'1.17',date:'2026-05-09',items:[
+    '新增介面主題色功能：設定頁可選擇藍、青藍、綠、紫、玫瑰、橙共 6 種顏色',
+    '選擇的顏色會記憶，下次開啟自動套用',
+  ]},
   {version:'1.16',date:'2026-05-07',items:[
     '修正浮動支出子類別拖移後自動收起的問題，展開狀態現在會保持',
   ]},
@@ -2836,7 +2890,7 @@ function checkChangelog(){
   document.getElementById('changelog-version-label').textContent=`v${entry.version} · ${entry.date}`;
   document.getElementById('changelog-list').innerHTML=entry.items.map(item=>`
     <li style="display:flex;gap:8px;padding:9px 0;border-bottom:1px solid #F3F4F6;font-size:14px;color:#374151;align-items:flex-start">
-      <span style="color:#3B5BDB;font-size:16px;flex-shrink:0;line-height:1.4">•</span>
+      <span style="color:var(--primary);font-size:16px;flex-shrink:0;line-height:1.4">•</span>
       <span style="line-height:1.5">${item}</span>
     </li>`).join('');
   document.getElementById('changelog-overlay').classList.add('open');
