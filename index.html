@@ -2547,9 +2547,10 @@ function renderFixedEditor(){
   const groups=loadFixedGroups();
   const el=document.getElementById('editor-fixed');
   const fallback=groups[groups.length-1]||'其他';
-  const grpTags=groups.map(g=>`
-    <span style="display:inline-flex;align-items:center;background:var(--primary-tint);border-radius:6px;padding:3px 10px;font-size:12px;margin:2px;color:#374151;cursor:pointer" onclick="editFixedGroup('${esc(g)}')">
-      ${g} ✎
+  const grpTags=groups.map((g,i)=>`
+    <span style="display:inline-flex;align-items:center;background:var(--primary-tint);border-radius:6px;padding:3px 8px;font-size:12px;margin:2px;color:#374151;gap:4px">
+      <span style="cursor:pointer" onclick="editFixedGroup('${esc(g)}')">${g} ✎</span>
+      ${i>0?`<span style="cursor:pointer;color:#EF4444;font-size:14px;line-height:1" onclick="deleteFixedGroup('${esc(g)}')">×</span>`:''}
     </span>`).join('');
   const grpOpts=groups.map(g=>`<option value="${g}">${g}</option>`).join('');
   const rows=fixed.map(f=>`
@@ -2584,7 +2585,11 @@ function addFixedGroup(){
   const inp=document.getElementById('fg-inp'); const val=inp.value.trim(); if(!val) return;
   const groups=loadFixedGroups();
   if(groups.includes(val)){showToast('已存在');return;}
-  groups.splice(groups.length-1,0,val);
+  const fallback=groups[groups.length-1]||groups[0];
+  const fixed=loadFixed(); let dirty=false;
+  fixed.forEach(f=>{if(!f.group){f.group=fallback;dirty=true;}});
+  if(dirty) saveFixed(fixed);
+  groups.push(val);
   saveFixedGroups(groups); inp.value=''; renderFixedEditor(); showToast('✅ 已新增');
   scheduleSyncToCloud();
 }
@@ -2601,6 +2606,18 @@ function editFixedGroup(oldName){
   scheduleSyncToCloud();
 }
 
+function deleteFixedGroup(name){
+  const groups=loadFixedGroups();
+  if(groups.length<=1){showToast('至少保留一個大類');return;}
+  if(!confirm(`確定要刪除「${name}」？\n此大類的項目將移入「${groups[0]}」`)) return;
+  const idx=groups.indexOf(name); if(idx<0) return;
+  groups.splice(idx,1); saveFixedGroups(groups);
+  const fallback=groups[0];
+  const fixed=loadFixed();
+  fixed.forEach(f=>{if(f.group===name) f.group=fallback;});
+  saveFixed(fixed); renderFixedEditor(); showToast('✅ 已刪除');
+  scheduleSyncToCloud();
+}
 function saveFixedAmt(id, val){
   const fixed=loadFixed(); const item=fixed.find(f=>f.id===id); if(!item) return;
   item.amount=parseFloat(val)||0; saveFixed(fixed);
@@ -2830,8 +2847,12 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='1.18';
+const APP_VERSION='1.19';
 const CHANGELOG=[
+  {version:'1.19',date:'2026-05-11',items:[
+    '固定支出大類可刪除，刪除後該大類的項目自動移入第一個大類',
+    '新增大類時插入在最後面，且不影響已設定好的項目分類',
+  ]},
   {version:'1.18',date:'2026-05-11',items:[
     '固定支出新增分類群組功能：可自訂群組、為每筆項目指派群組',
     '統計圖表改為顯示群組合計，更清晰好讀',
