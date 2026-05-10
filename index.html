@@ -950,6 +950,8 @@ const KEY_MG       = 'vic2_methods_grouped';
 const KEY_CATS     = 'vic2_categories';
 const KEY_INCOME   = 'vic2_income_cats';
 const KEY_FIXED    = 'vic2_fixed';
+const KEY_FIXED_GROUPS='vic2_fixed_groups';
+const DEFAULT_FIXED_GROUPS=['住房','保險','訂閱服務','其他'];
 const KEY_LOANS    = 'vic2_loans';
 const KEY_LOAN_PRIN = 'vic2_loan_prin';  // {loanId_YYYY-MM: positiveAmount}
 const KEY_ACCT_BAL  = 'vic2_acct_bal';
@@ -994,6 +996,8 @@ function saveIncome(a){ save(KEY_INCOME, a); }
 
 function loadFixed(){ return load(KEY_FIXED, DEFAULT_FIXED); }
 function saveFixed(a){ save(KEY_FIXED, a); }
+function loadFixedGroups(){ return load(KEY_FIXED_GROUPS, DEFAULT_FIXED_GROUPS); }
+function saveFixedGroups(a){ save(KEY_FIXED_GROUPS, a); }
 
 function loadLoans(){ return load(KEY_LOANS, DEFAULT_LOANS); }
 function saveLoans(a){ save(KEY_LOANS, a); }
@@ -2192,9 +2196,15 @@ const CHART_COLORS=['#3B5BDB','#F03E3E','#F59F00','#37B24D','#7950F2','#1C7ED6',
 const PIE_OPTS={responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10,padding:5}},tooltip:{callbacks:{label:c=>`${c.label}: $${fmt(c.parsed)}`}}}};
 
 function renderFixedChart(moRecs){
+  const fixed=loadFixed(); const groups=loadFixedGroups();
+  const fallback=groups[groups.length-1]||'其他';
   const totals={};
-  moRecs.filter(r=>r.main==='固定支出'&&r.amount<0).forEach(r=>{ const k=r.sub||'其他'; totals[k]=(totals[k]||0)+Math.abs(r.amount); });
-  const entries=Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+  moRecs.filter(r=>r.main==='固定支出'&&r.amount<0).forEach(r=>{
+    const item=fixed.find(f=>f.name===r.sub);
+    const grp=item?.group&&groups.includes(item.group)?item.group:fallback;
+    totals[grp]=(totals[grp]||0)+Math.abs(r.amount);
+  });
+  const entries=Object.entries(totals).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
   if(fixedChart) fixedChart.destroy();
   const wrap=document.getElementById('wrap-fixed'); if(!wrap) return;
   if(!entries.length){ wrap.innerHTML='<div style="text-align:center;padding:40px;color:#9BA3AF;font-size:13px">本月尚無固定支出</div>'; return; }
@@ -2534,20 +2544,61 @@ function editFloatSub(main,idx,oldSub){
 
 function renderFixedEditor(){
   const fixed=loadFixed();
+  const groups=loadFixedGroups();
   const el=document.getElementById('editor-fixed');
+  const fallback=groups[groups.length-1]||'其他';
+  const grpTags=groups.map(g=>`
+    <span style="display:inline-flex;align-items:center;background:var(--primary-tint);border-radius:6px;padding:3px 10px;font-size:12px;margin:2px;color:#374151;cursor:pointer" onclick="editFixedGroup('${esc(g)}')">
+      ${g} ✎
+    </span>`).join('');
+  const grpOpts=groups.map(g=>`<option value="${g}">${g}</option>`).join('');
   const rows=fixed.map(f=>`
     <div class="list-item-row" data-dkey="${f.id}">
       <span class="list-item-name">${f.name}</span>
+      <select style="font-size:11px;border:1px solid #E5E7EB;border-radius:5px;padding:2px 2px;color:#6B7280;background:#fff;max-width:110px;min-width:80px" onchange="saveFixedGroup('${f.id}',this.value)">
+        ${groups.map(g=>`<option value="${g}"${(f.group||fallback)===g?' selected':''}>${g}</option>`).join('')}
+      </select>
       <span class="inline-num-label">$</span>
       <input type="number" class="inline-num" value="${f.amount||''}" placeholder="0" min="0" step="1"
         onblur="saveFixedAmt('${f.id}',this.value)" onkeydown="if(event.key==='Enter')this.blur()">
       <button class="list-item-del" onclick="delFixed('${f.id}')">×</button>
     </div>`).join('');
-  el.innerHTML=rows+`<div class="list-add-row" style="flex-wrap:wrap;gap:6px">
+  el.innerHTML=`<div style="padding:8px 4px 10px;border-bottom:1px solid #F3F4F6;margin-bottom:4px">
+    <div style="font-size:11px;color:#9BA3AF;font-weight:700;margin-bottom:6px">大類管理</div>
+    <div style="display:flex;flex-wrap:wrap;margin-bottom:8px">${grpTags}</div>
+    <div style="display:flex;gap:6px">
+      <input class="list-add-input" id="fg-inp" placeholder="新增大類..." maxlength="10" style="flex:1">
+      <button class="list-add-btn" onclick="addFixedGroup()">新增</button>
+    </div>
+  </div>`+rows+`<div class="list-add-row" style="flex-wrap:wrap;gap:6px">
     <input class="list-add-input" id="fixed-name-inp" placeholder="項目名稱" maxlength="15" style="flex:2;min-width:100px">
     <input type="number" class="list-add-input" id="fixed-amt-inp" placeholder="金額" min="0" step="1" style="flex:1;min-width:70px">
     <button class="list-add-btn" onclick="addFixed()">新增</button>
   </div>`;
+}
+function saveFixedGroup(id,grp){
+  const fixed=loadFixed(); const item=fixed.find(f=>f.id===id); if(!item) return;
+  item.group=grp; saveFixed(fixed); scheduleSyncToCloud();
+}
+function addFixedGroup(){
+  const inp=document.getElementById('fg-inp'); const val=inp.value.trim(); if(!val) return;
+  const groups=loadFixedGroups();
+  if(groups.includes(val)){showToast('已存在');return;}
+  groups.splice(groups.length-1,0,val);
+  saveFixedGroups(groups); inp.value=''; renderFixedEditor(); showToast('✅ 已新增');
+  scheduleSyncToCloud();
+}
+function editFixedGroup(oldName){
+  const newName=(prompt(`重新命名「${oldName}」：`,oldName)||'').trim();
+  if(!newName||newName===oldName) return;
+  const groups=loadFixedGroups();
+  if(groups.includes(newName)){showToast('已存在此名稱');return;}
+  const idx=groups.indexOf(oldName); if(idx<0) return;
+  groups[idx]=newName; saveFixedGroups(groups);
+  const fixed=loadFixed();
+  fixed.forEach(f=>{if(f.group===oldName) f.group=newName;});
+  saveFixed(fixed); renderFixedEditor(); showToast('✅ 已更名');
+  scheduleSyncToCloud();
 }
 
 function saveFixedAmt(id, val){
@@ -2779,8 +2830,13 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='1.17';
+const APP_VERSION='1.18';
 const CHANGELOG=[
+  {version:'1.18',date:'2026-05-11',items:[
+    '固定支出新增分類群組功能：可自訂群組、為每筆項目指派群組',
+    '統計圖表改為顯示群組合計，更清晰好讀',
+    '修正固定支出群組下拉選單過窄、文字被截斷的問題',
+  ]},
   {version:'1.17',date:'2026-05-09',items:[
     '新增介面主題色功能：設定頁可選擇藍、青藍、綠、紫、玫瑰、橙共 6 種顏色',
     '選擇的顏色會記憶，下次開啟自動套用',
@@ -3030,7 +3086,7 @@ async function syncToCloud(){
   if(!_fbUser) return;
   try{
     const _cats=loadCats();
-    const p={records:loadRecords(),methods_grouped:loadMG(),categories:_cats,cats_order:Object.keys(_cats),income_cats:loadIncome(),fixed:loadFixed(),loans:loadLoans(),loan_prin:loadLoanPrin(),acct_bal:loadAcctBal(),acct_avail:loadAcctAvail(),cc_due:loadCCDue(),cc_limits:loadCCLimits(),fin_plan:loadFinPlan(),monthly_budgets:loadMonthlyBudgets()};
+    const p={records:loadRecords(),methods_grouped:loadMG(),categories:_cats,cats_order:Object.keys(_cats),income_cats:loadIncome(),fixed:loadFixed(),fixed_groups:loadFixedGroups(),loans:loadLoans(),loan_prin:loadLoanPrin(),acct_bal:loadAcctBal(),acct_avail:loadAcctAvail(),cc_due:loadCCDue(),cc_limits:loadCCLimits(),fin_plan:loadFinPlan(),monthly_budgets:loadMonthlyBudgets()};
     await _db.collection('users').doc(_fbUser.uid).collection('data').doc('main').set(p);
     setSyncDot('ok');
   } catch(e){ setSyncDot('error'); }
@@ -3056,6 +3112,7 @@ async function syncFromCloud(){
       }
       if(Array.isArray(d.income_cats)) saveIncome(d.income_cats);
       if(Array.isArray(d.fixed)) saveFixed(d.fixed);
+      if(Array.isArray(d.fixed_groups)) saveFixedGroups(d.fixed_groups);
       if(Array.isArray(d.loans)) saveLoans(d.loans);
       if(d.loan_prin) saveLoanPrin(d.loan_prin);
       if(d.acct_bal) saveAcctBal(d.acct_bal);
