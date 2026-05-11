@@ -64,6 +64,20 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .filter-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
 .filter-row:last-child{margin-bottom:0}
 .filter-select{width:100%;padding:9px 10px;border:1.5px solid #E5E7EB;border-radius:8px;font-size:13px;background:#fff;appearance:none;-webkit-appearance:none}
+.split-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.split-pill{padding:5px 11px;border:1.5px solid #E5E7EB;border-radius:20px;background:#fff;cursor:pointer;font-size:12px;color:#6B7280;white-space:nowrap}
+.split-pill.active{border-color:var(--primary);color:var(--primary);background:var(--primary-tint)}
+.records-summary{font-size:12px;color:#6B7280;padding:4px 2px 6px;display:flex;gap:12px;flex-wrap:wrap}
+.cat-stats-wrap{background:#fff;border-radius:12px;padding:10px 12px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.cat-stats-title{font-size:11px;font-weight:700;color:#9BA3AF;margin-bottom:8px}
+.cst-row{display:grid;grid-template-columns:1fr auto auto;gap:4px;align-items:center;padding:4px 0;border-bottom:1px solid #F3F4F6;font-size:12px}
+.cst-row:last-child{border-bottom:none}
+.cst-head{font-size:10px;font-weight:700;color:#9BA3AF;border-bottom:1px solid #E5E7EB !important}
+.cst-main-row{font-weight:600;color:#374151}
+.cst-sub-row{padding-left:12px;color:#6B7280}
+.cst-amt{text-align:right;min-width:60px;font-variant-numeric:tabular-nums}
+.cst-vic{color:#3B82F6}
+.cst-gf{color:#EC4899}
 .date-group-label{font-size:11px;color:#9BA3AF;font-weight:600;padding:10px 4px 4px;letter-spacing:.5px}
 .tx-swipe-wrap{position:relative;overflow:hidden}
 .tx-swipe-wrap:last-child .tx-item{border-bottom:none}
@@ -407,20 +421,21 @@ input[type=number]{-moz-appearance:textfield}
           <select class="filter-select" id="filter-method"><option value="">全部方式</option></select>
         </div>
         <div class="filter-row">
-          <select class="filter-select" id="filter-main"><option value="">全部類別</option></select>
-          <select class="filter-select" id="filter-split">
-            <option value="">全部帳</option>
-            <option value="vic">Vic 全額</option>
-            <option value="half">各一半</option>
-            <option value="gf">全女友</option>
-            <option value="repay">女友已分攤</option>
-          </select>
+          <select class="filter-select" id="filter-main" style="grid-column:1/-1"><option value="">全部類別</option></select>
+        </div>
+        <div class="split-pills" id="filter-split-pills">
+          <button class="split-pill" data-val="vic">Vic 全額</button>
+          <button class="split-pill" data-val="half">各一半</button>
+          <button class="split-pill" data-val="gf">全女友</button>
+          <button class="split-pill" data-val="repay">女友還款</button>
         </div>
         <div class="filter-row">
           <input type="date" class="filter-select" id="filter-from" style="font-size:13px">
           <input type="date" class="filter-select" id="filter-to" style="font-size:13px">
         </div>
       </div>
+      <div id="records-summary" class="records-summary" style="display:none"></div>
+      <div id="records-cat-stats" style="display:none"></div>
       <div id="records-list"></div>
     </div>
 
@@ -1412,8 +1427,11 @@ function resetAddForm(){
 
 // ─── Records ───────────────────────────────────────────────────────────────
 function initSearchListeners(){
-  ['search-input','filter-type','filter-method','filter-main','filter-split','filter-from','filter-to']
+  ['search-input','filter-type','filter-method','filter-main','filter-from','filter-to']
     .forEach(id=>document.getElementById(id).addEventListener(id==='search-input'?'input':'change',renderRecords));
+  document.getElementById('filter-split-pills').querySelectorAll('.split-pill').forEach(btn=>{
+    btn.addEventListener('click',()=>{ btn.classList.toggle('active'); renderRecords(); });
+  });
   document.getElementById('filter-toggle').addEventListener('click',()=>{
     const fc=document.getElementById('filter-card'), btn=document.getElementById('filter-toggle');
     fc.classList.toggle('open'); btn.classList.toggle('active');
@@ -1426,9 +1444,10 @@ function applyFilters(data){
   const ft=document.getElementById('filter-type').value;
   const fm=document.getElementById('filter-method').value;
   const fmain=document.getElementById('filter-main').value;
-  const fsplit=document.getElementById('filter-split').value;
   const ffrom=document.getElementById('filter-from').value;
   const fto=document.getElementById('filter-to').value;
+  const activeSplits=[...document.getElementById('filter-split-pills').querySelectorAll('.split-pill.active')].map(b=>b.dataset.val);
+  const splitMap={vic:r=>r.split===null,half:r=>r.split===1,gf:r=>r.split===0,repay:r=>r.split==='repay'};
   return data.filter(r=>{
     if(q&&!`${r.main}${r.sub}${r.note}${r.method}${r.type}${r.amount}`.toLowerCase().includes(q)) return false;
     if(ft&&r.type!==ft) return false;
@@ -1436,17 +1455,63 @@ function applyFilters(data){
     if(fmain&&r.main!==fmain) return false;
     if(ffrom&&r.date<ffrom) return false;
     if(fto&&r.date>fto) return false;
-    if(fsplit==='vic'&&r.split!==null) return false;
-    if(fsplit==='half'&&r.split!==1) return false;
-    if(fsplit==='gf'&&r.split!==0) return false;
-    if(fsplit==='repay'&&r.split!=='repay') return false;
+    if(activeSplits.length&&!activeSplits.some(v=>splitMap[v](r))) return false;
     return true;
   });
 }
 
+function amtStr(v){return (v>=0?'+':'')+fmt(Math.abs(v));}
+function isGfFiltering(){
+  return !![...document.getElementById('filter-split-pills').querySelectorAll('.split-pill.active')]
+    .some(b=>['half','gf','repay'].includes(b.dataset.val));
+}
 function renderRecords(){
   const filtered=applyFilters(loadRecords()).sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id));
   const list=document.getElementById('records-list');
+  const sumEl=document.getElementById('records-summary');
+  const catEl=document.getElementById('records-cat-stats');
+  if(filtered.length){
+    const total=filtered.reduce((s,r)=>s+r.amount,0);
+    const exp=filtered.filter(r=>r.amount<0).reduce((s,r)=>s+r.amount,0);
+    const inc=filtered.filter(r=>r.amount>0).reduce((s,r)=>s+r.amount,0);
+    const parts=[`共 ${filtered.length} 筆`,`總計 ${amtStr(total)}`];
+    if(inc) parts.push(`收入 +${fmt(inc)}`);
+    if(exp) parts.push(`支出 ${fmt(Math.abs(exp))}`);
+    sumEl.innerHTML=parts.map(p=>`<span>${p}</span>`).join('');
+    sumEl.style.display='flex';
+    // category stats
+    const mainMap={};
+    filtered.forEach(r=>{
+      const m=r.main||r.type||'其他', s=r.sub||'';
+      if(!mainMap[m]) mainMap[m]={vic:0,gf:0,subs:{}};
+      const v=vicShare(r.amount,r.split), g=r.amount-v;
+      mainMap[m].vic+=v; mainMap[m].gf+=g;
+      if(s){
+        if(!mainMap[m].subs[s]) mainMap[m].subs[s]={vic:0,gf:0};
+        mainMap[m].subs[s].vic+=v; mainMap[m].subs[s].gf+=g;
+      }
+    });
+    const rows=Object.entries(mainMap).map(([m,d])=>{
+      const subRows=Object.entries(d.subs).map(([s,sd])=>`
+        <div class="cst-row cst-sub-row">
+          <span>${s}</span>
+          <span class="cst-amt cst-vic">${amtStr(sd.vic)}</span>
+          <span class="cst-amt cst-gf">${amtStr(sd.gf)}</span>
+        </div>`).join('');
+      return `<div class="cst-row cst-main-row">
+        <span>${m}</span>
+        <span class="cst-amt cst-vic">${amtStr(d.vic)}</span>
+        <span class="cst-amt cst-gf">${amtStr(d.gf)}</span>
+      </div>${subRows}`;
+    }).join('');
+    if(isGfFiltering()){
+      catEl.innerHTML=`<div class="cat-stats-wrap">
+        <div class="cat-stats-title">類別統計</div>
+        <div class="cst-row cst-head"><span>類別</span><span class="cst-amt">Vic</span><span class="cst-amt">女友</span></div>
+        ${rows}</div>`;
+      catEl.style.display='block';
+    } else { catEl.style.display='none'; }
+  } else { sumEl.style.display='none'; catEl.style.display='none'; }
   if(!filtered.length){
     list.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">沒有符合的記錄</div><div class="empty-sub">試著新增一筆或調整篩選條件</div></div>';
     return;
@@ -1466,7 +1531,7 @@ function txItemHTML(r){
   const vicStr=r.split!==null&&r.split!=='repay'?`Vic: ${vc>0?'+':''}${fmt(Math.abs(vc))}`:'';
   const badge=r.split===0?'<span class="badge badge-gf">全女友</span>'
     :r.split===1?'<span class="badge badge-half">各半</span>'
-    :r.split==='repay'?'<span class="badge badge-repay">GF還款</span>':'';
+    :r.split==='repay'?'<span class="badge badge-repay">女友還款</span>':'';
   const mainLine=[r.method&&r.method!=='無'?r.method:null,r.main||r.type,r.sub].filter(Boolean).join(' · ');
   return `<div class="tx-swipe-wrap">
     <div class="tx-copy-btn" onclick="copyRecord('${r.id}')">複製</div>
@@ -2847,8 +2912,14 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='1.19';
+const APP_VERSION='1.20';
 const CHANGELOG=[
+  {version:'1.20',date:'2026-05-12',items:[
+    '記錄篩選分帳改為多選 pill 按鈕，可同時選多種分帳方式',
+    '篩選結果上方顯示總金額、筆數統計',
+    '篩選女友相關時，顯示各類別的 Vic / 女友金額明細',
+    '「GF還款」全面更名為「女友還款」',
+  ]},
   {version:'1.19',date:'2026-05-11',items:[
     '固定支出大類可刪除，刪除後該大類的項目自動移入第一個大類',
     '新增大類時插入在最後面，且不影響已設定好的項目分類',
