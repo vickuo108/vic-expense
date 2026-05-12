@@ -2096,7 +2096,7 @@ function calcMonthlyBalanceDetail(data, prefix){
   // 收入
   const income=moRecs.filter(r=>r.type==='收入').reduce((s,r)=>s+r.amount,0);
   // 浮動支出（CC 按期數攤），計算各類別明細
-  const floatRecs=moRecs.filter(r=>r.amount<0&&floatCatKeys.includes(r.main));
+  const floatRecs=moRecs.filter(r=>floatCatKeys.includes(r.main));
   const floatBycat={};
   floatRecs.forEach(r=>{
     const inst=ccMethods.has(r.method)&&r.installments>1?r.installments:1;
