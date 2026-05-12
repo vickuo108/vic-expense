@@ -110,8 +110,6 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .cc-install-inner td:first-child{text-align:left}
 .cc-row-clickable{cursor:pointer}
 .cc-row-clickable:hover td{background:#F9FAFB}
-.install-toggle-btn{padding:9px 14px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:13px;cursor:pointer;background:#fff;color:#6B7280}
-.install-toggle-btn.active{background:#EDE9FE;border-color:#7C3AED;color:#7C3AED;border-width:2px}
 .clr-expense{color:#EF4444}
 .clr-income{color:#10B981}
 .clr-transfer{color:#3B82F6}
@@ -390,13 +388,10 @@ input[type=number]{-moz-appearance:textfield}
         <!-- 分期欄位（信用卡付款時才顯示） -->
         <div id="f-install-extra" style="display:none">
           <div class="form-group">
-            <label class="form-label">是否分期</label>
-            <div style="display:flex;align-items:center;gap:10px">
-              <button type="button" class="install-toggle-btn" id="f-install-toggle" onclick="toggleInstall('f')">不分期</button>
-              <div id="f-install-count-wrap" style="display:none;align-items:center;gap:6px">
-                <input type="number" class="form-control" id="f-install-count" placeholder="期數" min="2" max="360" step="1" style="width:90px">
-                <span style="font-size:13px;color:#6B7280">期</span>
-              </div>
+            <label class="form-label">分期期數</label>
+            <div style="display:flex;align-items:center;gap:6px">
+              <input type="number" class="form-control" id="f-install-count" placeholder="不填為不分期" min="2" max="360" step="1" style="width:160px">
+              <span style="font-size:13px;color:#6B7280">期</span>
             </div>
           </div>
         </div>
@@ -855,13 +850,10 @@ input[type=number]{-moz-appearance:textfield}
     </div>
     <div id="e-install-extra" style="display:none">
       <div class="form-group">
-        <label class="form-label">是否分期</label>
-        <div style="display:flex;align-items:center;gap:10px">
-          <button type="button" class="install-toggle-btn" id="e-install-toggle" onclick="toggleInstall('e')">不分期</button>
-          <div id="e-install-count-wrap" style="display:none;align-items:center;gap:6px">
-            <input type="number" class="form-control" id="e-install-count" placeholder="期數" min="2" max="360" step="1" style="width:90px">
-            <span style="font-size:13px;color:#6B7280">期</span>
-          </div>
+        <label class="form-label">分期期數</label>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input type="number" class="form-control" id="e-install-count" placeholder="不填為不分期" min="2" max="360" step="1" style="width:160px">
+          <span style="font-size:13px;color:#6B7280">期</span>
         </div>
       </div>
     </div>
@@ -1428,21 +1420,8 @@ function updateSharePreview(){
 }
 
 function isCCMethod(method){ return (loadMG()['信用卡']||[]).includes(method); }
-function toggleInstall(prefix){
-  const btn=document.getElementById(`${prefix}-install-toggle`);
-  const wrap=document.getElementById(`${prefix}-install-count-wrap`);
-  const nowActive=!btn.classList.contains('active');
-  btn.classList.toggle('active',nowActive);
-  btn.textContent=nowActive?'分期':'不分期';
-  wrap.style.display=nowActive?'flex':'none';
-  if(!nowActive) document.getElementById(`${prefix}-install-count`).value='';
-}
 function resetInstall(prefix){
-  const btn=document.getElementById(`${prefix}-install-toggle`);
-  const wrap=document.getElementById(`${prefix}-install-count-wrap`);
   const inp=document.getElementById(`${prefix}-install-count`);
-  if(btn){btn.classList.remove('active');btn.textContent='不分期';}
-  if(wrap) wrap.style.display='none';
   if(inp) inp.value='';
 }
 function submitAdd(){
@@ -1465,7 +1444,7 @@ function submitAdd(){
     if(!isNaN(p)) rec.loanPrincipal=p;
     if(!isNaN(i)) rec.loanInterest=i;
   }
-  if(isCCMethod(rec.method)&&document.getElementById('f-install-toggle').classList.contains('active')){
+  if(isCCMethod(rec.method)){
     const n=parseInt(document.getElementById('f-install-count').value);
     if(n>=2) rec.installments=n;
   }
@@ -1751,9 +1730,6 @@ function openEdit(id){
   const isCC=isCCMethod(r.method);
   installExtra.style.display=isCC?'block':'none';
   if(isCC&&r.installments>1){
-    const tb=document.getElementById('e-install-toggle');
-    tb.classList.add('active'); tb.textContent='分期';
-    document.getElementById('e-install-count-wrap').style.display='flex';
     document.getElementById('e-install-count').value=r.installments;
   } else { resetInstall('e'); }
   const loanExtra=document.getElementById('e-loan-extra');
@@ -1787,7 +1763,7 @@ function saveEdit(){
     amount:parseAmt(document.getElementById('e-amount').value)||data[idx].amount,
     note:document.getElementById('e-note').value.trim(), split:editSplit,
   };
-  if(isCCMethod(updated.method)&&document.getElementById('e-install-toggle').classList.contains('active')){
+  if(isCCMethod(updated.method)){
     const n=parseInt(document.getElementById('e-install-count').value);
     if(n>=2) updated.installments=n; else delete updated.installments;
   } else { delete updated.installments; }
