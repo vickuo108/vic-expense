@@ -2207,8 +2207,9 @@ function renderCCSection(data, prefix){
     tCharge+=charge; tPay+=payment; if(outstanding>0) tOut+=outstanding;
     const lastPay=data.filter(r=>isPayment(r,name)).sort((a,b)=>b.date.localeCompare(a.date))[0];
     const dueStr=lastPay?lastPay.date.slice(5).replace('-','/'):'';
-    // 分期記錄（所有月份，此卡，有 installments）
-    const installRecs=data.filter(r=>r.method===name&&r.installments>1&&r.type!=='清償負債');
+    // 分期記錄（所有月份，此卡，有 installments，且尚未付清）
+    const installRecs=data.filter(r=>r.method===name&&r.installments>1&&r.type!=='清償負債'
+      &&(r.paidInstallments===undefined||(r.paidInstallments<r.installments)));
     const detailId=`cc-install-${ci}`;
     const hasInstall=installRecs.length>0;
     const installDetail=hasInstall?`
@@ -2391,6 +2392,7 @@ function renderEWalletSection(data, prefix){
 
 function renderFixedSection(data, prefix){
   const fixed=loadFixed();
+  const moB=loadMonthBudget(prefix);
   let total=0;
   const rows=fixed.map(item=>{
     const rec=data.filter(r=>r.date.startsWith(prefix)&&r.main==='固定支出'&&r.sub===item.name);
@@ -2400,11 +2402,12 @@ function renderFixedSection(data, prefix){
     const dayDisp=lastRec?lastRec.date.slice(5).replace('-','/'):'';
     const histRec=data.filter(r=>r.main==='固定支出'&&r.sub===item.name).sort((a,b)=>b.date.localeCompare(a.date))[0];
     const method=histRec?.method||'';
-    const displayAmt=hasActual?amt:(item.amount?-(item.amount):0);
-    total+=displayAmt;
+    const budgetAmt=moB['fixed:'+item.name];
+    const displayAmt=hasActual?amt:(budgetAmt!=null?-budgetAmt:0);
+    if(displayAmt) total+=displayAmt;
     const amtHtml=hasActual
       ?`<span class="clr-expense">${fmt(displayAmt)}</span>`
-      :(item.amount?`<span style="color:#9BA3AF">${fmt(displayAmt)}</span>`:'');
+      :(budgetAmt!=null?`<span style="color:#9BA3AF">${fmt(-budgetAmt)}</span>`:'');
     return `<tr>
       <td>${item.name}</td>
       <td>${method}</td>
