@@ -2095,12 +2095,15 @@ function calcMonthlyBalanceDetail(data, prefix){
   const moB=loadMonthBudget(prefix);
   // 收入
   const income=moRecs.filter(r=>r.type==='收入').reduce((s,r)=>s+r.amount,0);
-  // 浮動支出（CC 按期數攤）
-  const floatExp=moRecs.filter(r=>r.amount<0&&floatCatKeys.includes(r.main))
-    .reduce((s,r)=>{
-      const inst=ccMethods.has(r.method)&&r.installments>1?r.installments:1;
-      return s+r.amount/inst;
-    },0);
+  // 浮動支出（CC 按期數攤），計算各類別明細
+  const floatRecs=moRecs.filter(r=>r.amount<0&&floatCatKeys.includes(r.main));
+  const floatBycat={};
+  floatRecs.forEach(r=>{
+    const inst=ccMethods.has(r.method)&&r.installments>1?r.installments:1;
+    floatBycat[r.main]=(floatBycat[r.main]||0)+r.amount/inst;
+  });
+  const floatDetail=floatCatKeys.filter(k=>floatBycat[k]).map(k=>({cat:k,amt:floatBycat[k]}));
+  const floatExp=floatDetail.reduce((s,x)=>s+x.amt,0);
   // 固定支出（有記錄用記錄，無記錄用報表當月預算）
   const fixedRecs=moRecs.filter(r=>r.main==='固定支出');
   let fixedActual=0, fixedEstimate=0;
@@ -2117,7 +2120,7 @@ function calcMonthlyBalanceDetail(data, prefix){
     ?loanRecs.reduce((s,r)=>s+r.amount,0)
     :(moB['loan']||0);
   return {
-    income, floatExp,
+    income, floatExp, floatDetail,
     fixedExp, fixedActual, fixedEstimate,
     loanExp, loanIsActual,
     total: income+floatExp+fixedExp+loanExp
@@ -2142,6 +2145,11 @@ function showMonthBalDetail(){
       <div><div class="mobal-row-label">浮動支出</div><div class="mobal-row-sub">信用卡分期已按月攤</div></div>
       <div>${nc(d.floatExp)}</div>
     </div>
+    ${d.floatDetail.map(x=>`
+    <div class="mobal-row" style="padding:5px 0 5px 16px;border-bottom:1px solid #F9FAFB">
+      <div style="font-size:13px;color:#6B7280">${x.cat}</div>
+      <div style="font-size:13px"><span class="clr-expense">${fmt(x.amt)}</span></div>
+    </div>`).join('')}
     <div class="mobal-row">
       <div><div class="mobal-row-label">固定支出</div><div class="mobal-row-sub">${fixedSub}</div></div>
       <div>${nc(d.fixedExp)}</div>
