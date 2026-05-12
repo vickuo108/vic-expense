@@ -112,6 +112,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .cc-install-inner td:first-child{text-align:left}
 .cc-row-clickable{cursor:pointer}
 .install-paid-btn{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border:1px solid #D1D5DB;border-radius:4px;background:#fff;font-size:13px;line-height:1;cursor:pointer;color:#374151;padding:0;vertical-align:middle}
+.billed-btn{padding:3px 7px;border:1px solid #D1D5DB;border-radius:5px;background:#F9FAFB;font-size:10px;cursor:pointer;color:#6B7280;white-space:nowrap}
 .cc-row-clickable:hover td{background:#F9FAFB}
 .clr-expense{color:#EF4444}
 .clr-income{color:#10B981}
@@ -2095,12 +2096,25 @@ function calcMonthlyBalanceDetail(data, prefix){
   const moB=loadMonthBudget(prefix);
   // 收入
   const income=moRecs.filter(r=>r.type==='收入').reduce((s,r)=>s+r.amount,0);
-  // 浮動支出（CC 按期數攤），計算各類別明細
+  // 浮動支出：CC 分期依 billedDate 決定是否扣除，其餘正常計算
   const floatRecs=moRecs.filter(r=>floatCatKeys.includes(r.main));
+  // 加上所有月份中屬於本月應攤的 CC 分期（billedDate 在本月或以前且尚未還清）
+  const allCCInstall=data.filter(r=>
+    floatCatKeys.includes(r.main)&&r.installments>1&&ccMethods.has(r.method)&&r.billedDate
+  );
   const floatBycat={};
+  // 先算非 CC 分期的浮動記錄（含正數退款）
   floatRecs.forEach(r=>{
-    const inst=ccMethods.has(r.method)&&r.installments>1?r.installments:1;
-    floatBycat[r.main]=(floatBycat[r.main]||0)+r.amount/inst;
+    if(ccMethods.has(r.method)&&r.installments>1) return; // CC 分期另外處理
+    floatBycat[r.main]=(floatBycat[r.main]||0)+r.amount;
+  });
+  // 再算所有月份的 CC 分期（只要本月在入帳月到期末之間就扣一期）
+  allCCInstall.forEach(r=>{
+    const billedYm=r.billedDate.slice(0,7);
+    const elapsed=monthDiff(billedYm,prefix);
+    if(elapsed>=0&&elapsed<r.installments){
+      floatBycat[r.main]=(floatBycat[r.main]||0)+r.amount/r.installments;
+    }
   });
   const floatDetail=floatCatKeys.filter(k=>floatBycat[k]).map(k=>({cat:k,amt:floatBycat[k]}));
   const floatExp=floatDetail.reduce((s,x)=>s+x.amt,0);
@@ -2239,6 +2253,26 @@ function toggleCCInstall(id){
   const el=document.getElementById(id);
   if(el) el.classList.toggle('open');
 }
+function setBilled(id){
+  const data=loadRecords();
+  const idx=data.findIndex(r=>r.id===id);
+  if(idx<0) return;
+  data[idx].billedDate=localDateStr();
+  saveRecords(data);
+  const openIds=[...document.querySelectorAll('.cc-install-detail.open')].map(el=>el.id);
+  renderStats();
+  openIds.forEach(oid=>{ const el=document.getElementById(oid); if(el) el.classList.add('open'); });
+}
+function cancelBilled(id){
+  const data=loadRecords();
+  const idx=data.findIndex(r=>r.id===id);
+  if(idx<0) return;
+  delete data[idx].billedDate;
+  saveRecords(data);
+  const openIds=[...document.querySelectorAll('.cc-install-detail.open')].map(el=>el.id);
+  renderStats();
+  openIds.forEach(oid=>{ const el=document.getElementById(oid); if(el) el.classList.add('open'); });
+}
 function changeInstallPaid(id, delta){
   const data=loadRecords();
   const idx=data.findIndex(r=>r.id===id);
@@ -2280,7 +2314,7 @@ function renderCCSection(data, prefix){
         <td colspan="5" style="padding:0 0 6px 12px">
           <table class="cc-install-inner">
             <thead><tr>
-              <th>項目</th><th>購買日</th><th>總金額</th><th>月攤額</th><th>已付/總期</th><th>剩餘</th>
+              <th>項目</th><th>購買日</th><th>總金額</th><th>月攤額</th><th>已付/總期</th><th>剩餘</th><th>入帳</th>
             </tr></thead>
             <tbody>${installRecs.sort((a,b)=>b.date.localeCompare(a.date)).map(r=>{
               const purchaseYm=r.date.slice(0,7);
@@ -2289,6 +2323,9 @@ function renderCCSection(data, prefix){
               const remaining=r.installments-paid;
               const monthly=Math.round(r.amount/r.installments);
               const remainAmt=remaining*monthly;
+              const billedCell=r.billedDate
+                ?`<div style="font-size:10px;color:#7C3AED;white-space:nowrap">✓ ${r.billedDate.slice(5).replace('-','/')}<br><span onclick="event.stopPropagation();cancelBilled('${r.id}')" style="color:#9BA3AF;cursor:pointer;text-decoration:underline">取消</span></div>`
+                :`<button class="billed-btn" onclick="event.stopPropagation();setBilled('${r.id}')">未入帳</button>`;
               return `<tr>
                 <td>${r.sub||r.main||'-'}</td>
                 <td>${r.date.slice(5).replace('-','/')}</td>
@@ -2300,6 +2337,7 @@ function renderCCSection(data, prefix){
                   <button class="install-paid-btn" onclick="event.stopPropagation();changeInstallPaid('${r.id}',1)">＋</button>
                 </td>
                 <td>${remaining>0?`<span class="clr-expense">${fmt(Math.abs(remainAmt))}</span>`:'✅'}</td>
+                <td>${billedCell}</td>
               </tr>`;
             }).join('')}</tbody>
           </table>
