@@ -118,6 +118,17 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .clr-transfer{color:#3B82F6}
 .stats-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 .stat-box{background:#fff;border-radius:14px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.stat-box.clickable{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.stat-box.clickable:active{opacity:.75}
+.mobal-sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:700;display:none;align-items:flex-end}
+.mobal-sheet-overlay.open{display:flex}
+.mobal-sheet{background:#fff;border-radius:18px 18px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom));width:100%;box-sizing:border-box;max-height:80vh;overflow-y:auto}
+.mobal-sheet-title{font-size:16px;font-weight:700;color:#1A1A2E;margin-bottom:16px;text-align:center}
+.mobal-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #F3F4F6;font-size:14px}
+.mobal-row:last-child{border-bottom:none}
+.mobal-row-label{color:#374151}
+.mobal-row-sub{font-size:11px;color:#9BA3AF;margin-top:2px}
+.mobal-total-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;margin-top:4px;border-top:2px solid #E5E7EB;font-size:16px;font-weight:700}
 .stat-box-label{font-size:11px;color:#9BA3AF;font-weight:600;margin-bottom:4px}
 .stat-box-val{font-size:20px;font-weight:800}
 .stat-box-sub{font-size:11px;color:#9BA3AF;margin-top:2px}
@@ -510,10 +521,10 @@ input[type=number]{-moz-appearance:textfield}
           <div class="stat-box-val" id="s-cash-only">$0</div>
           <div class="stat-box-sub">現金帳戶合計</div>
         </div>
-        <div class="stat-box">
+        <div class="stat-box clickable" onclick="showMonthBalDetail()">
           <div class="stat-box-label">月可用餘額</div>
           <div class="stat-box-val" id="s-month-bal">$0</div>
-          <div class="stat-box-sub">本月收-支</div>
+          <div class="stat-box-sub">點擊看明細</div>
         </div>
         <div class="stat-box">
           <div class="stat-box-label">年可用餘額</div>
@@ -2074,11 +2085,14 @@ function renderBudgetEditor(){
 }
 
 function calcMonthlyBalance(data, prefix){
+  return calcMonthlyBalanceDetail(data, prefix).total;
+}
+function calcMonthlyBalanceDetail(data, prefix){
   const ccMethods=new Set(loadMG()['信用卡']||[]);
   const floatCatKeys=Object.keys(loadCats());
   const fixed=loadFixed();
-  const loans=loadLoans();
   const moRecs=data.filter(r=>r.date.startsWith(prefix));
+  const moB=loadMonthBudget(prefix);
   // 收入
   const income=moRecs.filter(r=>r.type==='收入').reduce((s,r)=>s+r.amount,0);
   // 浮動支出（CC 按期數攤）
@@ -2087,19 +2101,60 @@ function calcMonthlyBalance(data, prefix){
       const inst=ccMethods.has(r.method)&&r.installments>1?r.installments:1;
       return s+r.amount/inst;
     },0);
-  // 固定支出（有記錄用記錄，無記錄用預設）
+  // 固定支出（有記錄用記錄，無記錄用報表當月預算）
   const fixedRecs=moRecs.filter(r=>r.main==='固定支出');
-  const fixedExp=fixed.reduce((s,item)=>{
+  let fixedActual=0, fixedEstimate=0;
+  fixed.forEach(item=>{
     const actuals=fixedRecs.filter(r=>r.sub===item.name);
-    return actuals.length?s+actuals.reduce((ss,r)=>ss+r.amount,0):s-(item.amount||0);
-  },0);
+    if(actuals.length){ fixedActual+=actuals.reduce((s,r)=>s+r.amount,0); }
+    else{ fixedEstimate+=moB['fixed:'+item.name]||0; }
+  });
+  const fixedExp=fixedActual+fixedEstimate;
   // 貸款（有記錄用記錄，無記錄用報表當月預算）
   const loanRecs=moRecs.filter(r=>r.main==='貸款');
-  const moB=loadMonthBudget(prefix);
-  const loanExp=loanRecs.length
+  const loanIsActual=loanRecs.length>0;
+  const loanExp=loanIsActual
     ?loanRecs.reduce((s,r)=>s+r.amount,0)
     :(moB['loan']||0);
-  return income+floatExp+fixedExp+loanExp;
+  return {
+    income, floatExp,
+    fixedExp, fixedActual, fixedEstimate,
+    loanExp, loanIsActual,
+    total: income+floatExp+fixedExp+loanExp
+  };
+}
+function showMonthBalDetail(){
+  const data=loadRecords();
+  const prefix=`${statYear}-${String(statMonth).padStart(2,'0')}`;
+  const d=calcMonthlyBalanceDetail(data, prefix);
+  const nc=n=>n===0?'$0':n>0?`<span class="clr-income">+${fmt(n)}</span>`:`<span class="clr-expense">${fmt(n)}</span>`;
+  const fixedSub=d.fixedActual&&d.fixedEstimate
+    ?`實際 ${fmt(d.fixedActual)} ／ 預估 ${fmt(d.fixedEstimate)}`
+    :(d.fixedActual?'全部實際記錄':'全部報表預估');
+  const loanSub=d.loanIsActual?'實際還款記錄':'報表當月預估';
+  document.getElementById('mobal-sheet-title').textContent=`${statYear} 年 ${statMonth} 月 可用餘額明細`;
+  document.getElementById('mobal-sheet-body').innerHTML=`
+    <div class="mobal-row">
+      <div><div class="mobal-row-label">收入</div></div>
+      <div>${nc(d.income)}</div>
+    </div>
+    <div class="mobal-row">
+      <div><div class="mobal-row-label">浮動支出</div><div class="mobal-row-sub">信用卡分期已按月攤</div></div>
+      <div>${nc(d.floatExp)}</div>
+    </div>
+    <div class="mobal-row">
+      <div><div class="mobal-row-label">固定支出</div><div class="mobal-row-sub">${fixedSub}</div></div>
+      <div>${nc(d.fixedExp)}</div>
+    </div>
+    <div class="mobal-row">
+      <div><div class="mobal-row-label">貸款支出</div><div class="mobal-row-sub">${loanSub}</div></div>
+      <div>${nc(d.loanExp)}</div>
+    </div>
+    <div class="mobal-total-row">
+      <div>月可用餘額</div>
+      <div>${nc(d.total)}</div>
+    </div>`;
+  document.getElementById('mobal-sheet-overlay').classList.add('open');
 }
 function renderStats(){
   const data=loadRecords();
@@ -3493,5 +3548,13 @@ _auth.onAuthStateChanged(async user=>{
   }
 });
 </script>
+
+<!-- 月可用餘額明細 sheet -->
+<div class="mobal-sheet-overlay" id="mobal-sheet-overlay" onclick="this.classList.remove('open')">
+  <div class="mobal-sheet" onclick="event.stopPropagation()">
+    <div class="mobal-sheet-title" id="mobal-sheet-title">月可用餘額明細</div>
+    <div id="mobal-sheet-body"></div>
+  </div>
+</div>
 </body>
 </html>
