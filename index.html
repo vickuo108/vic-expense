@@ -527,10 +527,10 @@ input[type=number]{-moz-appearance:textfield}
           <div class="stat-box-val" id="s-month-bal">$0</div>
           <div class="stat-box-sub">點擊看明細</div>
         </div>
-        <div class="stat-box">
+        <div class="stat-box clickable" onclick="showYearBalDetail()">
           <div class="stat-box-label">年可用餘額</div>
           <div class="stat-box-val" id="s-year-bal">$0</div>
-          <div class="stat-box-sub">今年收-支</div>
+          <div class="stat-box-sub">點擊看明細</div>
         </div>
       </div>
       <div class="chart-card" id="sec-income">
@@ -2088,6 +2088,18 @@ function renderBudgetEditor(){
 function calcMonthlyBalance(data, prefix){
   return calcMonthlyBalanceDetail(data, prefix).total;
 }
+function calcAnnualBalanceDetail(data, year){
+  let income=0,floatExp=0,fixedExp=0,loanExp=0;
+  const floatBycat={};
+  for(let m=1;m<=12;m++){
+    const pfx=`${year}-${String(m).padStart(2,'0')}`;
+    const d=calcMonthlyBalanceDetail(data,pfx);
+    income+=d.income; floatExp+=d.floatExp; fixedExp+=d.fixedExp; loanExp+=d.loanExp;
+    d.floatDetail.forEach(x=>{ floatBycat[x.cat]=(floatBycat[x.cat]||0)+x.amt; });
+  }
+  const floatDetail=Object.entries(floatBycat).filter(([,v])=>v).map(([cat,amt])=>({cat,amt}));
+  return {income,floatExp,floatDetail,fixedExp,loanExp,total:income+floatExp+fixedExp+loanExp};
+}
 function calcMonthlyBalanceDetail(data, prefix){
   const ccMethods=new Set(loadMG()['信用卡']||[]);
   const floatCatKeys=Object.keys(loadCats());
@@ -2178,6 +2190,39 @@ function showMonthBalDetail(){
     </div>`;
   document.getElementById('mobal-sheet-overlay').classList.add('open');
 }
+function showYearBalDetail(){
+  const data=loadRecords();
+  const d=calcAnnualBalanceDetail(data,statYear);
+  const nc=n=>n===0?'$0':n>0?`<span class="clr-income">+${fmt(n)}</span>`:`<span class="clr-expense">${fmt(n)}</span>`;
+  document.getElementById('mobal-sheet-title').textContent=`${statYear} 年 可用餘額明細`;
+  document.getElementById('mobal-sheet-body').innerHTML=`
+    <div class="mobal-row">
+      <div><div class="mobal-row-label">收入</div></div>
+      <div>${nc(d.income)}</div>
+    </div>
+    <div class="mobal-row">
+      <div><div class="mobal-row-label">浮動支出</div><div class="mobal-row-sub">信用卡分期依入帳月攤</div></div>
+      <div>${nc(d.floatExp)}</div>
+    </div>
+    ${d.floatDetail.map(x=>`
+    <div class="mobal-row" style="padding:5px 0 5px 16px;border-bottom:1px solid #F9FAFB">
+      <div style="font-size:13px;color:#6B7280">${x.cat}</div>
+      <div style="font-size:13px"><span class="clr-expense">${fmt(x.amt)}</span></div>
+    </div>`).join('')}
+    <div class="mobal-row">
+      <div><div class="mobal-row-label">固定支出</div><div class="mobal-row-sub">實際記錄 + 全年報表預估</div></div>
+      <div>${nc(d.fixedExp)}</div>
+    </div>
+    <div class="mobal-row">
+      <div><div class="mobal-row-label">貸款支出</div><div class="mobal-row-sub">實際記錄 + 全年報表預估</div></div>
+      <div>${nc(d.loanExp)}</div>
+    </div>
+    <div class="mobal-total-row">
+      <div>年可用餘額</div>
+      <div>${nc(d.total)}</div>
+    </div>`;
+  document.getElementById('mobal-sheet-overlay').classList.add('open');
+}
 function renderStats(){
   const data=loadRecords();
   const prefix=`${statYear}-${String(statMonth).padStart(2,'0')}`;
@@ -2222,10 +2267,8 @@ function renderStats(){
   mobalEl.textContent=(mobal>=0?'+':'')+fmt(mobal);
   mobalEl.className='stat-box-val '+(mobal>=0?'clr-income':'clr-expense');
   // 年可用餘額
-  const yrPfx=`${statYear}-`;
-  const yrInc=data.filter(r=>r.date.startsWith(yrPfx)&&r.amount>0&&r.type==='收入').reduce((s,r)=>s+r.amount,0);
-  const yrExp=data.filter(r=>r.date.startsWith(yrPfx)&&r.amount<0).reduce((s,r)=>s+r.amount,0);
-  const yrbal=yrInc+yrExp;
+  const yrDetail=calcAnnualBalanceDetail(data,statYear);
+  const yrbal=yrDetail.total;
   const yrbalEl=document.getElementById('s-year-bal');
   yrbalEl.textContent=(yrbal>=0?'+':'')+fmt(yrbal);
   yrbalEl.className='stat-box-val '+(yrbal>=0?'clr-income':'clr-expense');
