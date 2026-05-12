@@ -123,7 +123,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .loan-table{width:100%;border-collapse:collapse;font-size:12px}
 .loan-table th{background:#F8FAFC;padding:7px 5px;font-size:12px;font-weight:600;color:#374151;border-bottom:2px solid #E5E7EB;white-space:nowrap;text-align:right}
 .loan-table th:first-child{text-align:left}
-.loan-table td{padding:7px 5px;border-bottom:1px solid #F3F4F6;text-align:right;white-space:nowrap}
+.loan-table td{padding:7px 5px;font-size:12px;border-bottom:1px solid #F3F4F6;text-align:right;white-space:nowrap}
 .loan-table td:first-child{text-align:left;font-weight:600}
 .loan-table td.note-cell{color:#9BA3AF;font-size:10px;text-align:left;white-space:normal}
 .loan-table .total-row td{background:#F1F5F9;font-weight:700;border-top:2px solid #D1D5DB;border-bottom:none}
@@ -1446,7 +1446,7 @@ function updateClearBtn(){
     ['filter-type','filter-method','filter-main'].some(id=>document.getElementById(id).value)||
     document.getElementById('filter-from').value||document.getElementById('filter-to').value||
     document.getElementById('filter-split-pills').querySelector('.split-pill.active');
-  document.getElementById('filter-clear').style.display=active?'':'none';
+  document.getElementById('filter-clear').style.display=active?'block':'none';
 }
 function clearFilters(){
   document.getElementById('search-input').value='';
