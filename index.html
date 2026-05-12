@@ -111,6 +111,7 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .cc-install-inner td{font-size:11px;padding:4px 6px;border-bottom:1px solid #F3F4F6;text-align:right;color:#374151}
 .cc-install-inner td:first-child{text-align:left}
 .cc-row-clickable{cursor:pointer}
+.install-paid-btn{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border:1px solid #D1D5DB;border-radius:4px;background:#fff;font-size:13px;line-height:1;cursor:pointer;color:#374151;padding:0;vertical-align:middle}
 .cc-row-clickable:hover td{background:#F9FAFB}
 .clr-expense{color:#EF4444}
 .clr-income{color:#10B981}
@@ -2175,6 +2176,16 @@ function toggleCCInstall(id){
   const el=document.getElementById(id);
   if(el) el.classList.toggle('open');
 }
+function changeInstallPaid(id, delta){
+  const data=loadRecords();
+  const idx=data.findIndex(r=>r.id===id);
+  if(idx<0) return;
+  const r=data[idx];
+  const cur=r.paidInstallments!==undefined?r.paidInstallments:0;
+  data[idx].paidInstallments=Math.max(0,Math.min(r.installments,cur+delta));
+  saveRecords(data);
+  renderStats();
+}
 function renderCCSection(data, prefix){
   const mg=loadMG(); const cards=mg['信用卡']||[];
   const bal=loadAcctBal(); const limits=loadCCLimits();
@@ -2208,7 +2219,7 @@ function renderCCSection(data, prefix){
             <tbody>${installRecs.sort((a,b)=>b.date.localeCompare(a.date)).map(r=>{
               const purchaseYm=r.date.slice(0,7);
               const elapsed=monthDiff(purchaseYm,prefix);
-              const paid=Math.min(elapsed,r.installments);
+              const paid=r.paidInstallments!==undefined?r.paidInstallments:Math.min(elapsed,r.installments);
               const remaining=r.installments-paid;
               const monthly=Math.round(r.amount/r.installments);
               const remainAmt=remaining*monthly;
@@ -2217,7 +2228,11 @@ function renderCCSection(data, prefix){
                 <td>${r.date.slice(5).replace('-','/')}</td>
                 <td class="clr-expense">${fmt(Math.abs(r.amount))}</td>
                 <td class="clr-expense">${fmt(Math.abs(monthly))}</td>
-                <td>${paid}/${r.installments}</td>
+                <td style="white-space:nowrap">
+                  <button class="install-paid-btn" onclick="event.stopPropagation();changeInstallPaid('${r.id}',-1)">−</button>
+                  ${paid}/${r.installments}
+                  <button class="install-paid-btn" onclick="event.stopPropagation();changeInstallPaid('${r.id}',1)">＋</button>
+                </td>
                 <td>${remaining>0?`<span class="clr-expense">${fmt(Math.abs(remainAmt))}</span>`:'✅'}</td>
               </tr>`;
             }).join('')}</tbody>
