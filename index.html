@@ -99,7 +99,19 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .badge-half{background:#FEF3C7;color:#D97706}
 .badge-repay{background:#DCFCE7;color:#16A34A}
 .badge-install{background:#EDE9FE;color:#7C3AED}
-.install-toggle.active{background:#EDE9FE;border-color:#7C3AED;color:#7C3AED;border-width:2px}
+.cc-install-row{background:#F5F3FF}
+.cc-install-row td{padding:4px 5px;font-size:11px;color:#6B7280}
+.cc-install-detail{display:none;background:#F5F3FF}
+.cc-install-detail.open{display:table-row-group}
+.cc-install-inner{width:100%;border-collapse:collapse}
+.cc-install-inner th{font-size:10px;font-weight:600;color:#9BA3AF;padding:4px 6px;border-bottom:1px solid #E5E7EB;text-align:right}
+.cc-install-inner th:first-child{text-align:left}
+.cc-install-inner td{font-size:11px;padding:4px 6px;border-bottom:1px solid #F3F4F6;text-align:right;color:#374151}
+.cc-install-inner td:first-child{text-align:left}
+.cc-row-clickable{cursor:pointer}
+.cc-row-clickable:hover td{background:#F9FAFB}
+.install-toggle-btn{padding:9px 14px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:13px;cursor:pointer;background:#fff;color:#6B7280}
+.install-toggle-btn.active{background:#EDE9FE;border-color:#7C3AED;color:#7C3AED;border-width:2px}
 .clr-expense{color:#EF4444}
 .clr-income{color:#10B981}
 .clr-transfer{color:#3B82F6}
@@ -380,7 +392,7 @@ input[type=number]{-moz-appearance:textfield}
           <div class="form-group">
             <label class="form-label">是否分期</label>
             <div style="display:flex;align-items:center;gap:10px">
-              <button type="button" class="split-opt install-toggle" id="f-install-toggle" onclick="toggleInstall('f')">不分期</button>
+              <button type="button" class="install-toggle-btn" id="f-install-toggle" onclick="toggleInstall('f')">不分期</button>
               <div id="f-install-count-wrap" style="display:none;align-items:center;gap:6px">
                 <input type="number" class="form-control" id="f-install-count" placeholder="期數" min="2" max="360" step="1" style="width:90px">
                 <span style="font-size:13px;color:#6B7280">期</span>
@@ -845,7 +857,7 @@ input[type=number]{-moz-appearance:textfield}
       <div class="form-group">
         <label class="form-label">是否分期</label>
         <div style="display:flex;align-items:center;gap:10px">
-          <button type="button" class="split-opt install-toggle" id="e-install-toggle" onclick="toggleInstall('e')">不分期</button>
+          <button type="button" class="install-toggle-btn" id="e-install-toggle" onclick="toggleInstall('e')">不分期</button>
           <div id="e-install-count-wrap" style="display:none;align-items:center;gap:6px">
             <input type="number" class="form-control" id="e-install-count" placeholder="期數" min="2" max="360" step="1" style="width:90px">
             <span style="font-size:13px;color:#6B7280">期</span>
@@ -1419,10 +1431,11 @@ function isCCMethod(method){ return (loadMG()['信用卡']||[]).includes(method)
 function toggleInstall(prefix){
   const btn=document.getElementById(`${prefix}-install-toggle`);
   const wrap=document.getElementById(`${prefix}-install-count-wrap`);
-  const active=btn.classList.toggle('active');
-  btn.textContent=active?'分期':'不分期';
-  wrap.style.display=active?'flex':'none';
-  if(!active) document.getElementById(`${prefix}-install-count`).value='';
+  const nowActive=!btn.classList.contains('active');
+  btn.classList.toggle('active',nowActive);
+  btn.textContent=nowActive?'分期':'不分期';
+  wrap.style.display=nowActive?'flex':'none';
+  if(!nowActive) document.getElementById(`${prefix}-install-count`).value='';
 }
 function resetInstall(prefix){
   const btn=document.getElementById(`${prefix}-install-toggle`);
@@ -2071,12 +2084,12 @@ function calcMonthlyBalance(data, prefix){
     const actuals=fixedRecs.filter(r=>r.sub===item.name);
     return actuals.length?s+actuals.reduce((ss,r)=>ss+r.amount,0):s-(item.amount||0);
   },0);
-  // 貸款（有記錄用記錄，無記錄用月還款預設）
+  // 貸款（有記錄用記錄，無記錄用報表當月預算）
   const loanRecs=moRecs.filter(r=>r.main==='貸款');
-  const loanExp=loans.reduce((s,loan)=>{
-    const actuals=loanRecs.filter(r=>r.sub===loan.name);
-    return actuals.length?s+actuals.reduce((ss,r)=>ss+r.amount,0):s-(loan.monthly||0);
-  },0);
+  const moB=loadMonthBudget(prefix);
+  const loanExp=loanRecs.length
+    ?loanRecs.reduce((s,r)=>s+r.amount,0)
+    :(moB['loan']||0);
   return income+floatExp+fixedExp+loanExp;
 }
 function renderStats(){
@@ -2145,37 +2158,71 @@ function renderStats(){
   renderCCChart(data, prefix);
 }
 
+function monthDiff(fromYm, toYm){
+  const [fy,fm]=fromYm.split('-').map(Number);
+  const [ty,tm]=toYm.split('-').map(Number);
+  return (ty-fy)*12+(tm-fm);
+}
+function toggleCCInstall(id){
+  const el=document.getElementById(id);
+  if(el) el.classList.toggle('open');
+}
 function renderCCSection(data, prefix){
   const mg=loadMG(); const cards=mg['信用卡']||[];
   const bal=loadAcctBal(); const limits=loadCCLimits();
   const totalLimit=limits.reduce((s,l)=>s+(l.amount||0),0);
   let tCharge=0,tPay=0,tOut=0;
-  // 判斷是否為某張卡的繳款記錄（支援舊方式與新方式）
   const isPayment=(r,name)=>
     (r.method===name&&r.type==='清償負債')||
     (r.main==='繳信用卡款'&&r.sub===name);
-  const rows=cards.map(name=>{
-    // 月刷卡：該卡本月的消費（method=卡名，非清償負債）
+  const rows=cards.map((name,ci)=>{
     const moRecs=data.filter(r=>r.method===name&&r.date.startsWith(prefix));
     const charge=moRecs.filter(r=>r.type!=='清償負債'&&r.amount<0).reduce((s,r)=>s+r.amount,0);
-    // 本月繳款：舊方式＋新方式
     const payment=data.filter(r=>isPayment(r,name)&&r.date.startsWith(prefix)).reduce((s,r)=>s+r.amount,0);
-    // 尚待繳清：期初餘額 + 全部刷卡 - 全部繳款（含新舊兩種方式）
     const openOut=bal[name]||0;
     const allCharges=data.filter(r=>r.method===name&&r.type!=='清償負債'&&r.amount<0).reduce((s,r)=>s+Math.abs(r.amount),0);
     const allPayments=data.filter(r=>isPayment(r,name)).reduce((s,r)=>s+Math.abs(r.amount),0);
     const outstanding=openOut+allCharges-allPayments;
     tCharge+=charge; tPay+=payment; if(outstanding>0) tOut+=outstanding;
-    // 上次繳款日：取最新的繳款記錄日期
     const lastPay=data.filter(r=>isPayment(r,name)).sort((a,b)=>b.date.localeCompare(a.date))[0];
     const dueStr=lastPay?lastPay.date.slice(5).replace('-','/'):'';
-    return `<tr>
-      <td>${name}</td>
+    // 分期記錄（所有月份，此卡，有 installments）
+    const installRecs=data.filter(r=>r.method===name&&r.installments>1&&r.type!=='清償負債');
+    const detailId=`cc-install-${ci}`;
+    const hasInstall=installRecs.length>0;
+    const installDetail=hasInstall?`
+      <tr class="cc-install-detail" id="${detailId}">
+        <td colspan="5" style="padding:0 0 6px 12px">
+          <table class="cc-install-inner">
+            <thead><tr>
+              <th>項目</th><th>購買日</th><th>總金額</th><th>月攤額</th><th>已付/總期</th><th>剩餘</th>
+            </tr></thead>
+            <tbody>${installRecs.sort((a,b)=>b.date.localeCompare(a.date)).map(r=>{
+              const purchaseYm=r.date.slice(0,7);
+              const elapsed=monthDiff(purchaseYm,prefix);
+              const paid=Math.min(elapsed+1,r.installments);
+              const remaining=r.installments-paid;
+              const monthly=Math.round(r.amount/r.installments);
+              const remainAmt=remaining*monthly;
+              return `<tr>
+                <td>${r.sub||r.main||'-'}</td>
+                <td>${r.date.slice(5).replace('-','/')}</td>
+                <td class="clr-expense">${fmt(Math.abs(r.amount))}</td>
+                <td class="clr-expense">${fmt(Math.abs(monthly))}</td>
+                <td>${paid}/${r.installments}</td>
+                <td>${remaining>0?`<span class="clr-expense">${fmt(Math.abs(remainAmt))}</span>`:'✅'}</td>
+              </tr>`;
+            }).join('')}</tbody>
+          </table>
+        </td>
+      </tr>`:'';
+    return `<tr class="cc-row-clickable" onclick="${hasInstall?`toggleCCInstall('${detailId}')`:''}" style="${hasInstall?'':''}">
+      <td>${name}${hasInstall?` <span style="font-size:10px;color:#7C3AED">▶ 分期</span>`:''}</td>
       <td>${charge?`<span class="clr-expense">${fmt(charge)}</span>`:'-'}</td>
       <td>${payment?`<span class="clr-expense">${fmt(payment)}</span>`:'-'}</td>
       <td>${outstanding>0?fmt(outstanding):'-'}</td>
       <td class="note-cell">${dueStr}</td>
-    </tr>`;
+    </tr>${installDetail}`;
   }).join('');
   const rate=totalLimit>0?Math.round(tOut/totalLimit*100)+'%':'-';
   const total=`<tr class="total-row"><td>信用卡合計</td><td><span class="clr-expense">${fmt(tCharge)||'-'}</span></td><td><span class="clr-expense">${fmt(tPay)||'-'}</span></td><td>${fmt(tOut)}</td><td class="note-cell">使用率 ${rate}</td></tr>`;
@@ -2887,10 +2934,7 @@ function renderLoansEditor(){
   const rows=loans.map(l=>`
     <div class="list-item-row" data-dkey="${l.id}">
       <span class="list-item-name">${l.name}</span>
-      <span class="inline-num-label" style="font-size:11px">月還款 $</span>
-      <input type="number" class="inline-num" value="${l.monthly||''}" placeholder="0" min="0" step="1" style="width:68px"
-        onblur="saveLoanMonthly('${l.id}',this.value)" onkeydown="if(event.key==='Enter')this.blur()">
-      <span class="inline-num-label" style="font-size:11px">本金 $</span>
+      <span class="inline-num-label">期初本金 $</span>
       <input type="number" class="inline-num" value="${l.principal||''}" placeholder="0" min="0" step="1"
         onblur="saveLoanPrincipal('${l.id}',this.value)" onkeydown="if(event.key==='Enter')this.blur()">
       <button class="list-item-del" onclick="delLoan('${l.id}')">×</button>
@@ -2904,10 +2948,6 @@ function renderLoansEditor(){
 function saveLoanPrincipal(id, val){
   const loans=loadLoans(); const item=loans.find(l=>l.id===id); if(!item) return;
   item.principal=parseFloat(val)||0; saveLoans(loans);
-}
-function saveLoanMonthly(id, val){
-  const loans=loadLoans(); const item=loans.find(l=>l.id===id); if(!item) return;
-  item.monthly=parseFloat(val)||0; saveLoans(loans);
 }
 function addLoan(){
   const name=document.getElementById('loan-name-inp').value.trim(); if(!name) return;
