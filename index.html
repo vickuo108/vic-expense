@@ -99,6 +99,8 @@ html,body{height:100%;height:-webkit-fill-available;overflow:hidden;font-family:
 .badge-half{background:#FEF3C7;color:#D97706}
 .badge-repay{background:#DCFCE7;color:#16A34A}
 .badge-install{background:#EDE9FE;color:#7C3AED}
+.install-toggle-btn{padding:9px 14px;border:1.5px solid #E5E7EB;border-radius:10px;font-size:13px;cursor:pointer;background:#fff;color:#6B7280}
+.install-toggle-btn.active{background:#EDE9FE;border-color:#7C3AED;color:#7C3AED;border-width:2px}
 .cc-install-row{background:#F5F3FF}
 .cc-install-row td{padding:4px 5px;font-size:11px;color:#6B7280}
 .cc-install-detail{display:none;background:#F5F3FF}
@@ -388,10 +390,13 @@ input[type=number]{-moz-appearance:textfield}
         <!-- 分期欄位（信用卡付款時才顯示） -->
         <div id="f-install-extra" style="display:none">
           <div class="form-group">
-            <label class="form-label">分期期數</label>
-            <div style="display:flex;align-items:center;gap:6px">
-              <input type="number" class="form-control" id="f-install-count" placeholder="不填為不分期" min="2" max="360" step="1" style="width:160px">
-              <span style="font-size:13px;color:#6B7280">期</span>
+            <label class="form-label">是否分期</label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <button type="button" class="install-toggle-btn" id="f-install-toggle" onclick="toggleInstall('f')">不分期</button>
+              <div id="f-install-count-wrap" style="display:none;align-items:center;gap:6px">
+                <input type="number" class="form-control" id="f-install-count" placeholder="期數" min="2" max="360" step="1" style="width:90px">
+                <span style="font-size:13px;color:#6B7280">期</span>
+              </div>
             </div>
           </div>
         </div>
@@ -850,10 +855,13 @@ input[type=number]{-moz-appearance:textfield}
     </div>
     <div id="e-install-extra" style="display:none">
       <div class="form-group">
-        <label class="form-label">分期期數</label>
-        <div style="display:flex;align-items:center;gap:6px">
-          <input type="number" class="form-control" id="e-install-count" placeholder="不填為不分期" min="2" max="360" step="1" style="width:160px">
-          <span style="font-size:13px;color:#6B7280">期</span>
+        <label class="form-label">是否分期</label>
+        <div style="display:flex;align-items:center;gap:10px">
+          <button type="button" class="install-toggle-btn" id="e-install-toggle" onclick="toggleInstall('e')">不分期</button>
+          <div id="e-install-count-wrap" style="display:none;align-items:center;gap:6px">
+            <input type="number" class="form-control" id="e-install-count" placeholder="期數" min="2" max="360" step="1" style="width:90px">
+            <span style="font-size:13px;color:#6B7280">期</span>
+          </div>
         </div>
       </div>
     </div>
@@ -1292,6 +1300,9 @@ function populateAddForm(){
   fillMethodSelect(document.getElementById('f-method'));
   fillMainSelect(document.getElementById('f-main'));
   fillSelect(document.getElementById('f-sub'), [], '（選填）');
+  // 初始化時若預設付款方式已是信用卡，主動顯示分期欄位
+  const defaultMethod=document.getElementById('f-method').value;
+  document.getElementById('f-install-extra').style.display=isCCMethod(defaultMethod)?'block':'none';
 }
 
 function populateEditForm(){
@@ -1383,6 +1394,11 @@ function initFormListeners(){
     fillMethodSelect(document.getElementById('f-method'), typeVal);
     fillMainSelect(document.getElementById('f-main'), '', true, typeVal);
     fillSelect(document.getElementById('f-sub'), [], '（選填）');
+    // 切換類型後付款方式可能改變，重新判斷是否顯示分期欄位
+    const newMethod=document.getElementById('f-method').value;
+    const isCC=isCCMethod(newMethod);
+    document.getElementById('f-install-extra').style.display=isCC?'block':'none';
+    if(!isCC) resetInstall('f');
   });
   document.getElementById('btn-add-submit').addEventListener('click', submitAdd);
   attachAmtFormat('f-amount');
@@ -1420,8 +1436,21 @@ function updateSharePreview(){
 }
 
 function isCCMethod(method){ return (loadMG()['信用卡']||[]).includes(method); }
+function toggleInstall(prefix){
+  const btn=document.getElementById(`${prefix}-install-toggle`);
+  const wrap=document.getElementById(`${prefix}-install-count-wrap`);
+  const nowActive=!btn.classList.contains('active');
+  btn.classList.toggle('active',nowActive);
+  btn.textContent=nowActive?'分期':'不分期';
+  wrap.style.display=nowActive?'flex':'none';
+  if(!nowActive) document.getElementById(`${prefix}-install-count`).value='';
+}
 function resetInstall(prefix){
+  const btn=document.getElementById(`${prefix}-install-toggle`);
+  const wrap=document.getElementById(`${prefix}-install-count-wrap`);
   const inp=document.getElementById(`${prefix}-install-count`);
+  if(btn){btn.classList.remove('active');btn.textContent='不分期';}
+  if(wrap) wrap.style.display='none';
   if(inp) inp.value='';
 }
 function submitAdd(){
@@ -1444,7 +1473,7 @@ function submitAdd(){
     if(!isNaN(p)) rec.loanPrincipal=p;
     if(!isNaN(i)) rec.loanInterest=i;
   }
-  if(isCCMethod(rec.method)){
+  if(isCCMethod(rec.method)&&document.getElementById('f-install-toggle').classList.contains('active')){
     const n=parseInt(document.getElementById('f-install-count').value);
     if(n>=2) rec.installments=n;
   }
@@ -1730,6 +1759,9 @@ function openEdit(id){
   const isCC=isCCMethod(r.method);
   installExtra.style.display=isCC?'block':'none';
   if(isCC&&r.installments>1){
+    const tb=document.getElementById('e-install-toggle');
+    tb.classList.add('active'); tb.textContent='分期';
+    document.getElementById('e-install-count-wrap').style.display='flex';
     document.getElementById('e-install-count').value=r.installments;
   } else { resetInstall('e'); }
   const loanExtra=document.getElementById('e-loan-extra');
@@ -1763,7 +1795,7 @@ function saveEdit(){
     amount:parseAmt(document.getElementById('e-amount').value)||data[idx].amount,
     note:document.getElementById('e-note').value.trim(), split:editSplit,
   };
-  if(isCCMethod(updated.method)){
+  if(isCCMethod(updated.method)&&document.getElementById('e-install-toggle').classList.contains('active')){
     const n=parseInt(document.getElementById('e-install-count').value);
     if(n>=2) updated.installments=n; else delete updated.installments;
   } else { delete updated.installments; }
