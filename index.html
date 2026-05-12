@@ -2928,8 +2928,12 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='1.20';
+const APP_VERSION='1.21';
 const CHANGELOG=[
+  {version:'1.21',date:'2026-05-12',items:[
+    '篩選有條件時顯示「✕ 清除」按鈕，一鍵清空所有篩選',
+    '修正統計固定支出表格支出日字體大小不一致',
+  ]},
   {version:'1.20',date:'2026-05-12',items:[
     '記錄篩選分帳改為多選 pill 按鈕，可同時選多種分帳方式',
     '篩選結果上方顯示總金額、筆數統計',
