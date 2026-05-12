@@ -2403,11 +2403,11 @@ function renderFixedSection(data, prefix){
     const histRec=data.filter(r=>r.main==='固定支出'&&r.sub===item.name).sort((a,b)=>b.date.localeCompare(a.date))[0];
     const method=histRec?.method||'';
     const budgetAmt=moB['fixed:'+item.name];
-    const displayAmt=hasActual?amt:(budgetAmt!=null?-budgetAmt:0);
+    const displayAmt=hasActual?amt:(budgetAmt!=null?budgetAmt:0);
     if(displayAmt) total+=displayAmt;
     const amtHtml=hasActual
       ?`<span class="clr-expense">${fmt(displayAmt)}</span>`
-      :(budgetAmt!=null?`<span style="color:#9BA3AF">${fmt(-budgetAmt)}</span>`:'');
+      :(budgetAmt!=null?`<span style="color:#9BA3AF">${fmt(budgetAmt)}</span>`:'');
     return `<tr>
       <td>${item.name}</td>
       <td>${method}</td>
@@ -3265,6 +3265,7 @@ const DEFAULT_GLOSSARY=[
   {id:'gl05',term:'增速',def:'DoD（Day over Day）— 日成長率\nMoM（Month over Month）— 月成長率\nQoQ（Quarter over Quarter）— 季成長率\nYoY（Year over Year）— 年成長率'},
   {id:'gl06',term:'毛利率',def:'公式：（營業收入 − 營業成本）÷ 營業收入 × 100%\n\n反映企業在扣除直接生產成本後的獲利能力。毛利率越高，代表產品或服務的附加價值越高。'},
   {id:'gl07',term:'淨利率',def:'公式：（毛利 − 營業費用 − 稅額）÷ 營收\n\n反映企業最終的獲利能力，即每一元營收最終留下多少淨利潤。'},
+  {id:'gl08',term:'月可用餘額',def:'公式：收入 − 浮動支出 − 固定支出 − 貸款支出\n\n各項說明：\n• 收入：當月所有收入記錄合計\n• 浮動支出：當月浮動類支出，信用卡分期消費只計入本月應攤金額（總額 ÷ 期數）\n• 固定支出：有實際記錄則用記錄金額，尚未記錄則以報表當月預估值代入\n• 貸款支出：有實際還款記錄則用記錄金額，尚未記錄則以報表當月貸款預估值代入'},
 ];
 const KEY_GLOSSARY='vic2_glossary';
 function loadGlossary(){ return load(KEY_GLOSSARY,DEFAULT_GLOSSARY); }
