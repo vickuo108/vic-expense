@@ -2208,7 +2208,7 @@ function renderCCSection(data, prefix){
             <tbody>${installRecs.sort((a,b)=>b.date.localeCompare(a.date)).map(r=>{
               const purchaseYm=r.date.slice(0,7);
               const elapsed=monthDiff(purchaseYm,prefix);
-              const paid=Math.min(elapsed+1,r.installments);
+              const paid=Math.min(elapsed,r.installments);
               const remaining=r.installments-paid;
               const monthly=Math.round(r.amount/r.installments);
               const remainAmt=remaining*monthly;
