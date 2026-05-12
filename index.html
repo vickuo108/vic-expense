@@ -469,7 +469,6 @@ input[type=number]{-moz-appearance:textfield}
         <div class="stat-box">
           <div class="stat-box-label">本月收入</div>
           <div class="stat-box-val clr-income" id="s-income">$0</div>
-          <div class="stat-box-sub">結餘 <span id="s-balance">$0</span></div>
         </div>
       </div>
       <div class="stats-row3">
@@ -1994,10 +1993,6 @@ function renderStats(){
   document.getElementById('s-expense').textContent=fmt(Math.abs(totalExp));
   document.getElementById('s-income').textContent='+'+fmt(totalInc);
   document.getElementById('s-vic-expense').textContent=fmt(Math.abs(vicExp));
-  const bal=totalInc+totalExp;
-  const balEl=document.getElementById('s-balance');
-  balEl.textContent=(bal>=0?'+':'')+fmt(bal);
-  balEl.className=bal>=0?'clr-income':'clr-expense';
   // 可用金額（標記可用的帳戶合計，含被轉入金額）
   const bd=loadAcctBal(); const mg2=loadMG(); const avail2=loadAcctAvail();
   const bankEwAccts=[...(mg2['銀行帳戶']||[]),...(mg2['電子錢包']||[])];
@@ -2929,8 +2924,11 @@ let _toast;
 function showToast(msg){ const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(_toast); _toast=setTimeout(()=>el.classList.remove('show'),2500); }
 
 // ─── 版本與更新日誌 ───────────────────────────────────────────────────────────
-const APP_VERSION='1.22';
+const APP_VERSION='1.23';
 const CHANGELOG=[
+  {version:'1.23',date:'2026-05-12',items:[
+    '移除統計本月收入卡片中的結餘顯示',
+  ]},
   {version:'1.22',date:'2026-05-12',items:[
     '修正清除篩選按鈕在 iOS 上未顯示的問題',
   ]},
