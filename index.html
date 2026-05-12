@@ -2184,7 +2184,9 @@ function changeInstallPaid(id, delta){
   const cur=r.paidInstallments!==undefined?r.paidInstallments:0;
   data[idx].paidInstallments=Math.max(0,Math.min(r.installments,cur+delta));
   saveRecords(data);
+  const openIds=[...document.querySelectorAll('.cc-install-detail.open')].map(el=>el.id);
   renderStats();
+  openIds.forEach(oid=>{ const el=document.getElementById(oid); if(el) el.classList.add('open'); });
 }
 function renderCCSection(data, prefix){
   const mg=loadMG(); const cards=mg['信用卡']||[];
@@ -2393,16 +2395,20 @@ function renderFixedSection(data, prefix){
   const rows=fixed.map(item=>{
     const rec=data.filter(r=>r.date.startsWith(prefix)&&r.main==='固定支出'&&r.sub===item.name);
     const amt=rec.reduce((s,r)=>s+r.amount,0);
+    const hasActual=rec.length>0;
     const lastRec=rec.slice().sort((a,b)=>b.date.localeCompare(a.date))[0];
     const dayDisp=lastRec?lastRec.date.slice(5).replace('-','/'):'';
-
     const histRec=data.filter(r=>r.main==='固定支出'&&r.sub===item.name).sort((a,b)=>b.date.localeCompare(a.date))[0];
     const method=histRec?.method||'';
-    if(amt) total+=amt;
+    const displayAmt=hasActual?amt:(item.amount?-(item.amount):0);
+    total+=displayAmt;
+    const amtHtml=hasActual
+      ?`<span class="clr-expense">${fmt(displayAmt)}</span>`
+      :(item.amount?`<span style="color:#9BA3AF">${fmt(displayAmt)}</span>`:'');
     return `<tr>
       <td>${item.name}</td>
       <td>${method}</td>
-      <td style="text-align:right">${amt?`<span class="clr-expense">${fmt(amt)}</span>`:''}</td>
+      <td style="text-align:right">${amtHtml}</td>
       <td style="text-align:right">${dayDisp}</td>
     </tr>`;
   }).join('');
