@@ -638,7 +638,7 @@ input[type=number]{-moz-appearance:textfield}
       </div>
       <div class="chart-card">
         <div class="chart-title">💳 信用卡消費</div>
-        <div class="chart-wrap"><canvas id="chart-cc"></canvas></div>
+        <div class="chart-wrap" id="wrap-cc"><canvas id="chart-cc"></canvas></div>
       </div>
     </div>
 
@@ -2595,9 +2595,18 @@ function renderFinChart(data){
 function renderCCChart(data, prefix){
   const mg=loadMG(); const cards=mg['信用卡']||[];
   const charges=cards.map(name=>Math.abs(data.filter(r=>r.date.startsWith(prefix)&&r.method===name&&r.type!=='清償負債'&&r.amount<0).reduce((s,r)=>s+r.amount,0)));
-  if(ccBarChart) ccBarChart.destroy();
+  if(ccBarChart){ ccBarChart.destroy(); ccBarChart=null; }
+  // 若 canvas 被前次「無消費」訊息取代，重新建立
+  let wrap=document.getElementById('wrap-cc');
+  if(!wrap) return;
+  if(!document.getElementById('chart-cc')){
+    wrap.innerHTML='<canvas id="chart-cc"></canvas>';
+  }
   const canvas=document.getElementById('chart-cc'); if(!canvas) return;
-  if(!cards.length||charges.every(c=>c===0)){ canvas.parentElement.innerHTML='<div style="text-align:center;padding:40px;color:#9BA3AF;font-size:13px">本月尚無信用卡消費</div>'; return; }
+  if(!cards.length||charges.every(c=>c===0)){
+    wrap.innerHTML='<div style="text-align:center;padding:40px;color:#9BA3AF;font-size:13px">本月尚無信用卡消費</div>';
+    return;
+  }
   ccBarChart=new Chart(canvas,{type:'bar',data:{labels:cards,datasets:[{data:charges,backgroundColor:getComputedStyle(document.documentElement).getPropertyValue('--primary-s25').trim(),borderColor:getComputedStyle(document.documentElement).getPropertyValue('--primary').trim(),borderWidth:1.5,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{callback:v=>'$'+fmt(v),font:{size:10}},grid:{color:'#F3F4F6'}},x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45}}}}});
 }
 
